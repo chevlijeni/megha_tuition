@@ -1,0 +1,27 @@
+# Node.js
+api/node_modules/
+api/.env
+api/npm-debug.log*
+api/yarn-debug.log*
+api/yarn-error.log*
+
+# Flutter/Mobile
+mobileApp/.dart_tool/
+mobileApp/.flutter-plugins-dependencies
+mobileApp/.pub-cache/
+mobileApp/.pub/
+mobileApp/build/
+mobileApp/coverage/
+mobileApp/android/app/debug
+mobileApp/android/app/profile
+mobileApp/android/app/release
+mobileApp/flutter_sdk/
+mobileApp/.firebase/
+mobileApp/.firebaserc
+mobileApp/*.iml
+mobileApp/.idea/
+
+# General
+*.log
+.DS_Store
+.vscode/
