@@ -15,7 +15,14 @@ class StudentDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Student Profile'),
+        toolbarHeight: 70,
+        flexibleSpace: Container(
+          decoration: AppTheme.headerDecoration,
+        ),
+        title: const Text(
+          'Student Profile',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
       ),
       body: SingleChildScrollView(
         child: Column(

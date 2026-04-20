@@ -34,7 +34,15 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Collect Fees'),
+        toolbarHeight: 80,
+        flexibleSpace: Container(
+          decoration: AppTheme.headerDecoration,
+        ),
+        automaticallyImplyLeading: false,
+        title: const Text(
+          'Collect Fees',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),

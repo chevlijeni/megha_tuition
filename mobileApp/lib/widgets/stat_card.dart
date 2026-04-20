@@ -6,6 +6,7 @@ class StatCard extends StatelessWidget {
   final String value;
   final IconData icon;
   final Color iconColor;
+  final Gradient? gradient;
   final VoidCallback? onTap;
 
   const StatCard({
@@ -14,45 +15,66 @@ class StatCard extends StatelessWidget {
     required this.value,
     required this.icon,
     required this.iconColor,
+    this.gradient,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    final bool isGradient = gradient != null;
+    final Color textColor = isGradient ? Colors.white : AppTheme.textPrimary;
+    final Color subTextColor = isGradient ? Colors.white.withOpacity(0.8) : AppTheme.textSecondary;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isGradient ? null : AppTheme.surfaceWhite,
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(24),
+        border: isGradient ? null : Border.all(color: Colors.grey.withOpacity(0.08), width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: isGradient 
+             ? (gradient!.colors.first).withOpacity(0.3)
+             : AppTheme.primaryBlue.withOpacity(0.04),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(20.0),
           child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.1),
-                shape: BoxShape.circle,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: isGradient ? Colors.white.withOpacity(0.2) : iconColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(icon, color: isGradient ? Colors.white : iconColor, size: 22),
               ),
-              child: Icon(icon, color: iconColor, size: 24),
-            ),
-            const Spacer(),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textPrimary,
+              const Spacer(),
+              Text(
+                value,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontSize: 22,
+                  color: textColor,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppTheme.textSecondary,
+              const SizedBox(height: 4),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                  color: subTextColor,
+                  letterSpacing: 0.2,
+                ),
               ),
-            ),
             ],
           ),
         ),

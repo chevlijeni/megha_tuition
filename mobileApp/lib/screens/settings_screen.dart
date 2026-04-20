@@ -8,8 +8,17 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.backgroundLight,
       appBar: AppBar(
-        title: const Text('Settings'),
+        toolbarHeight: 80,
+        flexibleSpace: Container(
+          decoration: AppTheme.headerDecoration,
+        ),
+        automaticallyImplyLeading: false,
+        title: const Text(
+          'Settings',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
       ),
       body: SingleChildScrollView(
         child: Column(

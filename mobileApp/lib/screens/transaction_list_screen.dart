@@ -67,7 +67,14 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Transaction History'),
+        toolbarHeight: 70,
+        flexibleSpace: Container(
+          decoration: AppTheme.headerDecoration,
+        ),
+        title: const Text(
+          'Transaction History',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
       ),
       body: Column(
         children: [

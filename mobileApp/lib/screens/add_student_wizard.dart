@@ -154,7 +154,14 @@ class _AddStudentWizardState extends State<AddStudentWizard> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add New Student'),
+        toolbarHeight: 70,
+        flexibleSpace: Container(
+          decoration: AppTheme.headerDecoration,
+        ),
+        title: const Text(
+          'Add New Student',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         elevation: 0,
       ),
       body: Column(

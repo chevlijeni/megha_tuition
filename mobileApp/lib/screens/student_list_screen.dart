@@ -41,46 +41,85 @@ class _StudentListScreenState extends State<StudentListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.backgroundLight,
       appBar: AppBar(
-        title: const Text('Students'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AddStudentWizard()),
-              );
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              onChanged: (value) => setState(() => _searchQuery = value),
-              decoration: InputDecoration(
-                hintText: 'Search by name or ID...',
-                prefixIcon: const Icon(Icons.search),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                fillColor: Colors.white,
-                filled: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
+        toolbarHeight: 120, // Taller for the search bar integration
+        flexibleSpace: Container(
+          decoration: AppTheme.headerDecoration,
+        ),
+        automaticallyImplyLeading: false,
+        title: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Students',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  icon: const Icon(Icons.person_add_alt_1_rounded, color: Colors.white, size: 22),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const AddStudentWizard()),
+                    );
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              height: 44,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: TextField(
+                onChanged: (value) => setState(() => _searchQuery = value),
+                style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
+                decoration: InputDecoration(
+                  hintText: 'Search students...',
+                  hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+                  prefixIcon: const Icon(Icons.search_rounded, color: AppTheme.primaryBlue, size: 20),
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 ),
               ),
             ),
-          ),
+          ],
+        ),
+      ),
+      body: Column(
+        children: [
+          const SizedBox(height: 20),
           _buildFilterBar(),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
+          
           Expanded(
             child: _filteredStudents.isEmpty
-                ? const Center(child: Text('No students found matching filters'))
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.search_off_rounded, size: 64, color: Colors.grey.shade300),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No students found',
+                          style: TextStyle(color: Colors.grey.shade500, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  )
                 : ListView.separated(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                     itemCount: _filteredStudents.length,
                     separatorBuilder: (context, index) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
@@ -111,7 +150,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
                     items: ['All', 'Morning', 'Afternoon', 'Evening'],
                     onChanged: (val) => setState(() => _selectedBatch = val!),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   _buildDropdownFilter(
                     label: 'Class',
                     value: _selectedClass,
@@ -132,30 +171,11 @@ class _StudentListScreenState extends State<StudentListScreen> {
                   _selectedClass = 'All';
                 });
               },
-              icon: const Icon(Icons.filter_list_off, color: AppTheme.errorRed),
+              icon: const Icon(Icons.restart_alt_rounded, color: AppTheme.errorRed),
               tooltip: 'Reset Filters',
             ),
           ],
         ],
-      ),
-    );
-  }
-
-  Widget _buildFilterChip(String label, {required bool isSelected, required VoidCallback onTap}) {
-    return FilterChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (_) => onTap(),
-      selectedColor: AppTheme.primaryBlue.withOpacity(0.2),
-      checkmarkColor: AppTheme.primaryBlue,
-      labelStyle: TextStyle(
-        color: isSelected ? AppTheme.primaryBlue : AppTheme.textSecondary,
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-      ),
-      backgroundColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: isSelected ? AppTheme.primaryBlue : Colors.grey.shade300),
       ),
     );
   }
@@ -168,29 +188,39 @@ class _StudentListScreenState extends State<StudentListScreen> {
   }) {
     final bool isFiltered = value != 'All';
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      height: 40,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isFiltered ? AppTheme.primaryBlue : Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isFiltered ? AppTheme.primaryBlue : Colors.grey.shade300),
+        border: Border.all(color: isFiltered ? AppTheme.primaryBlue : Colors.grey.shade200),
+        boxShadow: [
+          if (isFiltered)
+            BoxShadow(
+              color: AppTheme.primaryBlue.withOpacity(0.2),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+        ],
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
-          icon: const Icon(Icons.arrow_drop_down, color: AppTheme.textSecondary),
-          style: TextStyle(
-            color: isFiltered ? AppTheme.primaryBlue : AppTheme.textSecondary,
-            fontWeight: isFiltered ? FontWeight.bold : FontWeight.normal,
-            fontSize: 14,
+          icon: Icon(
+            Icons.keyboard_arrow_down_rounded, 
+            color: isFiltered ? Colors.white : AppTheme.textSecondary,
+            size: 20,
           ),
           onChanged: onChanged,
           selectedItemBuilder: (context) {
             return items.map((String item) {
               return Center(
                 child: Text(
-                  isFiltered ? '$label: $value' : label,
+                  isFiltered ? value : label,
                   style: TextStyle(
-                    color: isFiltered ? AppTheme.primaryBlue : AppTheme.textSecondary,
+                    color: isFiltered ? Colors.white : AppTheme.textSecondary,
+                    fontWeight: isFiltered ? FontWeight.w700 : FontWeight.w500,
+                    fontSize: 13,
                   ),
                 ),
               );
@@ -199,7 +229,10 @@ class _StudentListScreenState extends State<StudentListScreen> {
           items: items.map<DropdownMenuItem<String>>((String itemValue) {
             return DropdownMenuItem<String>(
               value: itemValue,
-              child: Text(itemValue),
+              child: Text(
+                itemValue,
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
             );
           }).toList(),
         ),
@@ -208,65 +241,92 @@ class _StudentListScreenState extends State<StudentListScreen> {
   }
 
   Widget _buildStudentCard(BuildContext context, Map<String, String> student) {
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => StudentDetailScreen(studentName: student['name']!, studentId: student['id']!),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.grey.withOpacity(0.05)),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryBlue.withOpacity(0.04),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
           ),
-        );
-      },
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
+        ],
+      ),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => StudentDetailScreen(studentName: student['name']!, studentId: student['id']!),
             ),
-          ],
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: Colors.grey.shade200,
-              radius: 24,
-              child: const Icon(Icons.person, color: AppTheme.primaryBlue),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          );
+        },
+        borderRadius: BorderRadius.circular(24),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  gradient: AppTheme.primaryGradient,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                padding: const EdgeInsets.all(2),
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(Icons.person_rounded, color: AppTheme.primaryBlue, size: 28),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      student['name']!,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${student['id']} • ${student['class']}',
+                      style: TextStyle(
+                        color: AppTheme.textSecondary.withOpacity(0.7),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    student['name']!,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    student['fee']!,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.primaryBlue,
+                      fontSize: 15,
+                    ),
                   ),
-                  Text('${student['id']} • ${student['class']} • ${student['batch']}', 
-                    style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
+                  const SizedBox(height: 6),
+                  StatusChip(
+                    label: student['status']!,
+                    color: student['status'] == 'Paid' ? AppTheme.successGreen : AppTheme.warningYellow,
+                  ),
                 ],
               ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  student['fee']!,
-                  style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
-                ),
-                const SizedBox(height: 4),
-                StatusChip(
-                  label: student['status']!,
-                  color: student['status'] == 'Paid' ? Colors.green : AppTheme.warningYellow,
-                ),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

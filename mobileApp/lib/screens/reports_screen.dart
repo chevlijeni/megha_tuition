@@ -8,7 +8,15 @@ class ReportsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Fee Reports'),
+        toolbarHeight: 80,
+        flexibleSpace: Container(
+          decoration: AppTheme.headerDecoration,
+        ),
+        automaticallyImplyLeading: false,
+        title: const Text(
+          'Fee Reports',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
