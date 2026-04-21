@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../theme/app_theme.dart';
+import '../utils/api_service.dart';
 import 'main_scaffold.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -12,8 +14,62 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _emailController = TextEditingController(text: 'megha');
+  final _passwordController = TextEditingController(text: 'megha1994');
+  final _formKey = GlobalKey<FormState>();
+  bool _isLoading = false;
+  bool _obscurePassword = true;
+  
+  // Top error notification state
+  String? _topErrorMessage;
+  bool _isErrorVisible = false;
+  Timer? _errorTimer;
+
+  void _showTopError(String message) {
+    _errorTimer?.cancel();
+    setState(() {
+      _topErrorMessage = message;
+      _isErrorVisible = true;
+    });
+
+    _errorTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() => _isErrorVisible = false);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _errorTimer?.cancel();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    final result = await ApiService.login(
+      _emailController.text.trim(),
+      _passwordController.text.trim(),
+    );
+
+    if (!mounted) return;
+
+    setState(() => _isLoading = false);
+
+    if (result['success']) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainScaffold()),
+      );
+    } else {
+      _showTopError(result['message']);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -87,8 +143,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               width: 1.5,
                             ),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Form(
+                            key: _formKey,
+                            autovalidateMode: AutovalidateMode.onUserInteraction,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 'Sign In',
@@ -112,6 +171,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                 label: 'Email or Username',
                                 hint: 'enter your credential',
                                 icon: Icons.person_outline,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your email or username';
+                                  }
+                                  return null;
+                                },
                               ),
                               const SizedBox(height: 20),
 
@@ -122,6 +187,25 @@ class _LoginScreenState extends State<LoginScreen> {
                                 hint: '••••••••',
                                 icon: Icons.lock_outline,
                                 isPassword: true,
+                                obscureText: _obscurePassword,
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                                    color: Colors.white70,
+                                    size: 20,
+                                  ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _obscurePassword = !_obscurePassword;
+                                    });
+                                  },
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your password';
+                                  }
+                                  return null;
+                                },
                               ),
                               const SizedBox(height: 12),
 
@@ -148,12 +232,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                               // Login Button
                               ElevatedButton(
-                                onPressed: () {
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => const MainScaffold()),
-                                  );
-                                },
+                                onPressed: _isLoading ? null : _handleLogin,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppTheme.primaryBlue,
                                   foregroundColor: Colors.white,
@@ -163,17 +242,27 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   elevation: 0,
                                 ),
-                                child: const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text('LOG IN'),
-                                    SizedBox(width: 8),
-                                    Icon(Icons.arrow_forward_rounded, size: 18),
-                                  ],
-                                ),
+                                  child: _isLoading 
+                                    ? const SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text('LOG IN'),
+                                          SizedBox(width: 8),
+                                          Icon(Icons.arrow_forward_rounded, size: 18),
+                                        ],
+                                      ),
                               ),
                             ],
                           ),
+                        ),
                         ),
                       ),
                     ),
@@ -193,7 +282,69 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           ),
+          
+          // Top Error Notification
+          _buildTopErrorNotification(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTopErrorNotification() {
+    return AnimatedPositioned(
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeOutBack, // Nice bounce effect
+      top: _isErrorVisible ? 20 : -100,
+      left: 20,
+      right: 20,
+      child: SafeArea(
+        child: Material(
+          color: Colors.transparent,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                decoration: BoxDecoration(
+                  color: AppTheme.errorRed.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppTheme.errorRed.withOpacity(0.3),
+                    width: 1.5,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.errorRed.withOpacity(0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.error_outline_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        _topErrorMessage ?? '',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -204,6 +355,9 @@ class _LoginScreenState extends State<LoginScreen> {
     required String hint,
     required IconData icon,
     bool isPassword = false,
+    bool obscureText = false,
+    Widget? suffixIcon,
+    String? Function(String?)? validator,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -217,14 +371,16 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        TextField(
+        TextFormField(
           controller: controller,
-          obscureText: isPassword,
+          obscureText: isPassword ? obscureText : false,
+          validator: validator,
           style: const TextStyle(color: Colors.white),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
             prefixIcon: Icon(icon, color: Colors.white70, size: 20),
+            suffixIcon: suffixIcon,
             filled: true,
             fillColor: Colors.white.withOpacity(0.05),
             enabledBorder: OutlineInputBorder(
@@ -235,6 +391,15 @@ class _LoginScreenState extends State<LoginScreen> {
               borderRadius: BorderRadius.circular(16),
               borderSide: BorderSide(color: Colors.white.withOpacity(0.5)),
             ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: AppTheme.errorRed.withOpacity(0.5)),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: AppTheme.errorRed, width: 2),
+            ),
+            errorStyle: const TextStyle(color: AppTheme.errorRed),
           ),
         ),
       ],

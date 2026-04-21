@@ -12,6 +12,5 @@ exports.createStudentValidate = [
     check('feeDetails.dueDayOfMonth', 'Due day must be between 1 and 31').isInt({ min: 1, max: 31 }),
     check('feeDetails.billCycle', 'Bill cycle must be Monthly, Quarterly, or Yearly').isIn(['Monthly', 'Quarterly', 'Yearly']),
     check('parentDetails.parentName', 'Parent name is required').notEmpty(),
-    check('parentDetails.mobileNumber', 'Valid 10-digit mobile number is required').isLength({ min: 10, max: 10 }),
-    check('parentDetails.address', 'Address is required').notEmpty()
+    check('parentDetails.mobileNumber', 'Valid 10-digit mobile number is required').isLength({ min: 10, max: 10 })
 ];

@@ -127,7 +127,11 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => StudentDetailScreen(studentName: name, studentId: 'STU001'),
+            builder: (context) => StudentDetailScreen(
+              mongoId: 'mock_${txn['id']}',
+              studentName: name, 
+              studentId: 'STU001',
+            ),
           ),
         );
       },

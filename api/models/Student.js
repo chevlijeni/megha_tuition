@@ -26,7 +26,7 @@ const studentSchema = new mongoose.Schema({
     parentDetails: {
         parentName: { type: String, required: true },
         mobileNumber: { type: String, required: true },
-        address: { type: String, required: true }
+        address: { type: String }
     },
     status: {
         type: String,

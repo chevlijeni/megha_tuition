@@ -6,9 +6,46 @@ import 'stats_detail_screen.dart';
 import 'transaction_list_screen.dart';
 import 'add_student_wizard.dart';
 import 'student_detail_screen.dart';
+import '../utils/api_service.dart';
+import 'package:intl/intl.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  Map<String, dynamic>? _stats;
+  List<dynamic> _recentPayments = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchDashboardData();
+  }
+
+  Future<void> _fetchDashboardData() async {
+    setState(() => _isLoading = true);
+    
+    final statsResult = await ApiService.getDashboardStats();
+    final paymentsResult = await ApiService.getPayments();
+    
+    if (mounted) {
+      setState(() {
+        if (statsResult['success']) {
+          _stats = statsResult['data'];
+        }
+        if (paymentsResult['success']) {
+          // Take only the first 4 for the recent list
+          _recentPayments = (paymentsResult['data'] as List).take(4).toList();
+        }
+        _isLoading = false;
+      });
+    }
+  }
 
   void _navigateToDetail(BuildContext context, String title, Color color) {
     Navigator.push(
@@ -55,70 +92,73 @@ class DashboardScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Professional Stats Grid (Optimized Size)
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.3, // Made cards shorter
-              children: [
-                StatCard(
-                  title: 'Total Students',
-                  value: '150',
-                  icon: Icons.people_rounded,
-                  iconColor: AppTheme.primaryBlue,
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF194464), Color(0xFFCEDDE8)], // Dark brand blue to very light
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+      body: RefreshIndicator(
+        onRefresh: _fetchDashboardData,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Professional Stats Grid (Optimized Size)
+              GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 1.3,
+                children: [
+                  StatCard(
+                    title: 'Total Students',
+                    value: _stats?['totalStudents']?.toString() ?? '...',
+                    icon: Icons.people_rounded,
+                    iconColor: AppTheme.primaryBlue,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF194464), Color(0xFFCEDDE8)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    onTap: () => _navigateToDetail(context, 'Students', AppTheme.primaryBlue),
                   ),
-                  onTap: () => _navigateToDetail(context, 'Students', AppTheme.primaryBlue),
-                ),
-                StatCard(
-                  title: 'Pending Fees',
-                  value: '₹45,000',
-                  icon: Icons.account_balance_wallet_rounded,
-                  iconColor: AppTheme.errorRed,
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF194464), Color(0xFFCEDDE8)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                  StatCard(
+                    title: 'Total Fees',
+                    value: '₹${NumberFormat('#,##,000').format(_stats?['totalFees'] ?? 0)}',
+                    icon: Icons.assignment_rounded,
+                    iconColor: AppTheme.warningYellow,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF194464), Color(0xFFCEDDE8)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    onTap: () => _navigateToDetail(context, 'Total Fees', AppTheme.warningYellow),
                   ),
-                  onTap: () => _navigateToDetail(context, 'Pending Fees', AppTheme.errorRed),
-                ),
-                StatCard(
-                  title: 'Total Collections',
-                  value: '₹1,20,000',
-                  icon: Icons.payments_rounded,
-                  iconColor: AppTheme.successGreen,
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF194464), Color(0xFFCEDDE8)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                  StatCard(
+                    title: 'Pending Fees',
+                    value: '₹${NumberFormat('#,##,000').format(_stats?['pendingFees'] ?? 0)}',
+                    icon: Icons.account_balance_wallet_rounded,
+                    iconColor: AppTheme.errorRed,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF194464), Color(0xFFCEDDE8)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    onTap: () => _navigateToDetail(context, 'Pending Fees', AppTheme.errorRed),
                   ),
-                  onTap: () => _navigateToDetail(context, 'Collections', AppTheme.successGreen),
-                ),
-                StatCard(
-                  title: 'New Admissions',
-                  value: '12',
-                  icon: Icons.person_add_rounded,
-                  iconColor: AppTheme.warningYellow,
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF194464), Color(0xFFCEDDE8)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                  StatCard(
+                    title: 'Total Collections',
+                    value: '₹${NumberFormat('#,##,000').format(_stats?['totalCollection'] ?? 0)}',
+                    icon: Icons.payments_rounded,
+                    iconColor: AppTheme.successGreen,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF194464), Color(0xFFCEDDE8)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    onTap: () => _navigateToDetail(context, 'Collections', AppTheme.successGreen),
                   ),
-                  onTap: () => _navigateToDetail(context, 'New Admissions', AppTheme.warningYellow),
-                ),
-              ],
-            ),
+                ],
+              ),
             
             const SizedBox(height: 32),
 
@@ -144,19 +184,30 @@ class DashboardScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: 4,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                return _buildTransactionItem(context, index);
-              },
-            ),
-            const SizedBox(height: 100), // Space for FAB
+            _isLoading 
+              ? const Center(child: Padding(
+                  padding: EdgeInsets.all(32.0),
+                  child: CircularProgressIndicator(),
+                ))
+              : _recentPayments.isEmpty
+                ? const Center(child: Padding(
+                    padding: EdgeInsets.all(32.0),
+                    child: Text('No transactions yet.'),
+                  ))
+                : ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: _recentPayments.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      return _buildTransactionItem(context, _recentPayments[index]);
+                    },
+                  ),
+            const SizedBox(height: 100),
           ],
         ),
       ),
+    ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.push(context, MaterialPageRoute(builder: (context) => const AddStudentWizard()));
@@ -170,9 +221,28 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTransactionItem(BuildContext context, int index) {
-    final names = ['Jane Smith', 'John Doe', 'Alice Johnson', 'Bob Brown'];
-    final name = names[index % names.length];
+  Widget _buildTransactionItem(BuildContext context, dynamic payment) {
+    final student = payment['student'] ?? {};
+    final personal = student['personalDetails'] ?? {};
+    final academic = student['academicDetails'] ?? {};
+    final name = personal['fullName'] ?? 'Unknown Student';
+    final amount = payment['amount'] ?? 0;
+    
+    // Format date
+    String timeStr = 'Recent';
+    if (payment['paymentDate'] != null) {
+      final date = DateTime.parse(payment['paymentDate']).toLocal();
+      final now = DateTime.now();
+      final diff = now.difference(date);
+      if (diff.inMinutes < 60) {
+        timeStr = '${diff.inMinutes} mins ago';
+      } else if (diff.inHours < 24) {
+        timeStr = '${diff.inHours} hours ago';
+      } else {
+        timeStr = DateFormat('dd MMM').format(date);
+      }
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -191,12 +261,18 @@ class DashboardScreen extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(24),
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => StudentDetailScreen(studentName: name, studentId: 'STU00${index + 1}'),
-              ),
-            );
+            if (student['_id'] != null) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => StudentDetailScreen(
+                    mongoId: student['_id'],
+                    studentName: name, 
+                    studentId: student['studentId'] ?? '',
+                  ),
+                ),
+              ).then((_) => _fetchDashboardData());
+            }
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -211,7 +287,7 @@ class DashboardScreen extends StatelessWidget {
                   ),
                   child: Center(
                     child: Text(
-                      name[0], 
+                      name.isNotEmpty ? name[0] : '?', 
                       style: const TextStyle(color: AppTheme.primaryBlue, fontWeight: FontWeight.bold, fontSize: 18),
                     ),
                   ),
@@ -228,7 +304,7 @@ class DashboardScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Class 10 • Batch Morning', 
+                        '${academic['className'] ?? ''} • ${timeStr}', 
                         style: TextStyle(color: AppTheme.textSecondary.withOpacity(0.8), fontSize: 13),
                       ),
                     ],
@@ -238,14 +314,14 @@ class DashboardScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
-                      '₹5,000', 
-                      style: TextStyle(fontWeight: FontWeight.w900, color: AppTheme.textPrimary, fontSize: 15),
+                    Text(
+                      '₹${NumberFormat('#,###').format(amount)}', 
+                      style: const TextStyle(fontWeight: FontWeight.w900, color: AppTheme.textPrimary, fontSize: 15),
                     ),
                     const SizedBox(height: 6),
                     StatusChip(
-                      label: index % 2 == 0 ? 'Paid' : 'Pending',
-                      color: index % 2 == 0 ? AppTheme.successGreen : AppTheme.warningYellow,
+                      label: payment['paymentMethod'] ?? 'Paid',
+                      color: AppTheme.successGreen,
                     ),
                   ],
                 ),

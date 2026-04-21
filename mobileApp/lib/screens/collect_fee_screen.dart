@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import 'transaction_list_screen.dart';
+import '../utils/api_service.dart';
+import 'package:intl/intl.dart';
+import 'student_detail_screen.dart';
+import '../widgets/status_chip.dart';
 
 class CollectFeeScreen extends StatefulWidget {
   const CollectFeeScreen({super.key});
@@ -12,23 +16,53 @@ class CollectFeeScreen extends StatefulWidget {
 class _CollectFeeScreenState extends State<CollectFeeScreen> {
   String _selectedMode = 'Cash';
   final List<String> _modes = ['Cash', 'Online Payment', 'Bank Transfer'];
-  Map<String, String>? _selectedStudent;
+  dynamic _selectedStudent;
   final TextEditingController _amountController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _referenceController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  
+  Map<String, dynamic>? _stats;
+  List<dynamic> _recentPayments = [];
+  List<dynamic> _allStudents = [];
+  bool _isLoading = true;
+  final GlobalKey _autocompleteKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchFeesData();
+  }
+
+  Future<void> _fetchFeesData() async {
+    setState(() => _isLoading = true);
+    
+    final statsResult = await ApiService.getDashboardStats();
+    final paymentsResult = await ApiService.getPayments();
+    final studentsResult = await ApiService.getStudents();
+    
+    if (mounted) {
+      setState(() {
+        if (statsResult['success']) _stats = statsResult['data'];
+        if (paymentsResult['success']) {
+          _recentPayments = (paymentsResult['data'] as List).take(4).toList();
+        }
+        if (studentsResult['success']) {
+          _allStudents = studentsResult['data'] as List;
+        }
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
     _amountController.dispose();
+    _searchController.dispose();
+    _referenceController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
-
-  // Mock student data for demonstration
-  final List<Map<String, String>> _allStudents = [
-    {'name': 'Jane Smith', 'id': 'STU001', 'class': 'Grade 10', 'batch': 'Morning', 'fee': '₹6,500', 'status': 'Pending'},
-    {'name': 'John Doe', 'id': 'STU002', 'class': 'Grade 9', 'batch': 'Afternoon', 'fee': '₹5,000', 'status': 'Paid'},
-    {'name': 'Alice Johnson', 'id': 'STU003', 'class': 'Grade 10', 'batch': 'Evening', 'fee': '₹6,500', 'status': 'Pending'},
-    {'name': 'Bob Brown', 'id': 'STU004', 'class': 'Grade 8', 'batch': 'Morning', 'fee': '₹4,500', 'status': 'Paid'},
-    {'name': 'Ankit Sharma', 'id': 'STU005', 'class': 'Grade 10', 'batch': 'Morning', 'fee': '₹5,000', 'status': 'Pending'},
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -44,12 +78,15 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSummaryDashboard(),
+      body: RefreshIndicator(
+        onRefresh: _fetchFeesData,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildSummaryDashboard(),
             const SizedBox(height: 24),
             const Text(
               'Search Student',
@@ -71,8 +108,9 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildSummaryDashboard() {
     return Row(
@@ -80,7 +118,7 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
         Expanded(
           child: _buildSummaryCard(
             label: 'Collected Today',
-            value: '₹12,500',
+            value: '₹${NumberFormat('#,###').format(_stats?['collectedToday'] ?? 0)}',
             icon: Icons.payments_outlined,
             color: AppTheme.successGreen,
           ),
@@ -89,7 +127,7 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
         Expanded(
           child: _buildSummaryCard(
             label: 'Transactions',
-            value: '08',
+            value: (_stats?['transactionsToday'] ?? 0).toString().padLeft(2, '0'),
             icon: Icons.receipt_long_outlined,
             color: AppTheme.primaryBlue,
           ),
@@ -138,7 +176,7 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
             ),
             child: Icon(Icons.person_search_outlined, size: 64, color: AppTheme.primaryBlue.withOpacity(0.5)),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           const Text(
             'Ready to collect fees?',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
@@ -147,26 +185,6 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
           const Text(
             'Search for a student to get started',
             style: TextStyle(color: AppTheme.textSecondary),
-          ),
-          const SizedBox(height: 32),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.amber.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.amber.withOpacity(0.3)),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.lightbulb_outline, size: 18, color: Colors.amber),
-                SizedBox(width: 8),
-                Text(
-                  'Tip: Search by Student ID for faster results',
-                  style: TextStyle(fontSize: 13, color: Colors.orange, fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
           ),
         ],
       ),
@@ -196,58 +214,161 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
           ],
         ),
         const SizedBox(height: 8),
-        _buildRecentItem('Rahul Verma', '₹4,500', '10 mins ago'),
-        _buildRecentItem('Sneha Gupta', '₹6,000', '1 hour ago'),
-        _buildRecentItem('Priya Singh', '₹3,500', '2 hours ago'),
+        _isLoading 
+          ? const Center(child: Padding(
+              padding: EdgeInsets.all(32.0),
+              child: CircularProgressIndicator(),
+            ))
+          : _recentPayments.isEmpty
+            ? const Center(child: Padding(
+                padding: EdgeInsets.all(32.0),
+                child: Text('No transactions today.'),
+              ))
+            : ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _recentPayments.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  return _buildTransactionItem(context, _recentPayments[index]);
+                },
+              ),
       ],
     );
   }
 
-  Widget _buildRecentItem(String name, String amount, String time) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: AppTheme.successGreen.withOpacity(0.1),
-            child: const Icon(Icons.check, size: 16, color: AppTheme.successGreen),
+  Widget _buildTransactionItem(BuildContext context, dynamic payment) {
+    final student = payment['student'] ?? {};
+    final personal = student['personalDetails'] ?? {};
+    final academic = student['academicDetails'] ?? {};
+    final name = personal['fullName'] ?? 'Unknown Student';
+    final amount = payment['amount'] ?? 0;
+    
+    String timeStr = 'Recent';
+    if (payment['paymentDate'] != null) {
+      final date = DateTime.parse(payment['paymentDate']).toLocal();
+      final now = DateTime.now();
+      final diff = now.difference(date);
+      if (diff.inMinutes < 60) {
+        timeStr = '${diff.inMinutes} mins ago';
+      } else if (diff.inHours < 24) {
+        timeStr = '${diff.inHours} hours ago';
+      } else {
+        timeStr = DateFormat('dd MMM').format(date);
+      }
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.grey.withOpacity(0.05)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: () {
+            if (student['_id'] != null) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => StudentDetailScreen(
+                    mongoId: student['_id'],
+                    studentName: name, 
+                    studentId: student['studentId'] ?? '',
+                  ),
+                ),
+              ).then((_) => _fetchFeesData());
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            child: Row(
               children: [
-                Text(name, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
-                Text(time, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppTheme.backgroundLight,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Center(
+                    child: Text(
+                      name.isNotEmpty ? name[0] : '?', 
+                      style: const TextStyle(color: AppTheme.primaryBlue, fontWeight: FontWeight.bold, fontSize: 18),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        name, 
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppTheme.textPrimary),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${academic['className'] ?? ''} • ${timeStr}', 
+                        style: TextStyle(color: AppTheme.textSecondary.withOpacity(0.8), fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '₹${NumberFormat('#,###').format(amount)}', 
+                      style: const TextStyle(fontWeight: FontWeight.w900, color: AppTheme.textPrimary, fontSize: 15),
+                    ),
+                    const SizedBox(height: 6),
+                    StatusChip(
+                      label: payment['paymentMethod'] ?? 'Paid',
+                      color: AppTheme.successGreen,
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
-          Text(amount, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.primaryBlue)),
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildSearchSection() {
-    return Autocomplete<Map<String, String>>(
-      displayStringForOption: (option) => option['name']!,
+    return Autocomplete<Map<String, dynamic>>(
+      textEditingController: _searchController,
+      focusNode: _searchFocusNode,
+      displayStringForOption: (option) => option['personalDetails']['fullName']!,
       optionsBuilder: (TextEditingValue textEditingValue) {
         if (textEditingValue.text == '') {
-          return const Iterable<Map<String, String>>.empty();
+          return const Iterable<Map<String, dynamic>>.empty();
         }
         return _allStudents.where((student) {
-          return student['name']!.toLowerCase().contains(textEditingValue.text.toLowerCase()) ||
-              student['id']!.toLowerCase().contains(textEditingValue.text.toLowerCase());
-        });
+          final name = student['personalDetails']['fullName']!.toString().toLowerCase();
+          final id = student['studentId']!.toString().toLowerCase();
+          final query = textEditingValue.text.toLowerCase();
+          return name.contains(query) || id.contains(query);
+        }).cast<Map<String, dynamic>>();
       },
       onSelected: (selection) {
         setState(() {
           _selectedStudent = selection;
-          // Parse fee amount (remove ₹ and commas) and autofill
-          final feeStr = selection['fee'] ?? '';
-          final numericFee = feeStr.replaceAll(RegExp(r'[₹, ]'), '');
-          _amountController.text = numericFee;
+          final fee = selection['feeDetails']['feeAmount'] ?? 0;
+          _amountController.text = fee.toString();
         });
       },
       fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
@@ -277,6 +398,11 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
   }
 
   Widget _buildSelectedStudentCard() {
+    final personal = _selectedStudent!['personalDetails'] ?? {};
+    final academic = _selectedStudent!['academicDetails'] ?? {};
+    final name = personal['fullName'] ?? 'Unknown';
+    final feeAmount = _selectedStudent!['feeDetails']?['feeAmount'] ?? 0;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -295,9 +421,9 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_selectedStudent!['name']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 Text(
-                  'ID: ${_selectedStudent!['id']} • ${_selectedStudent!['class']} • Pending: ${_selectedStudent!['fee']}',
+                  'ID: ${_selectedStudent!['studentId']} • ${academic['className']} • Fee: ₹$feeAmount',
                   style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
                 ),
               ],
@@ -308,6 +434,8 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
               setState(() {
                 _selectedStudent = null;
               });
+              // Clear the autocomplete search field
+              _searchController.clear();
             },
             child: const Text('Change'),
           ),
@@ -358,7 +486,8 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
           }).toList(),
         ),
         const SizedBox(height: 16),
-        const TextField(
+        TextField(
+          controller: _referenceController,
           decoration: InputDecoration(
             labelText: 'Reference Number (Optional)',
             hintText: 'TXN123456789',
@@ -366,15 +495,43 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
         ),
         const SizedBox(height: 48),
         ElevatedButton.icon(
-          onPressed: () => _showSuccessDialog(),
-          icon: const Icon(Icons.account_balance_wallet_outlined),
-          label: const Text('Collect Payment'),
+          onPressed: _isLoading ? null : () => _handleCollectPayment(),
+          icon: _isLoading 
+            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+            : const Icon(Icons.account_balance_wallet_outlined),
+          label: Text(_isLoading ? 'Processing...' : 'Collect Payment'),
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 16),
           ),
         ),
       ],
     );
+  }
+
+  Future<void> _handleCollectPayment() async {
+    if (_selectedStudent == null) return;
+    if (_amountController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter amount')));
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    final result = await ApiService.collectFee({
+      'studentId': _selectedStudent!['_id'],
+      'amount': double.parse(_amountController.text),
+      'paymentMethod': _selectedMode,
+      'referenceNumber': _referenceController.text.trim(),
+    });
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+      if (result['success']) {
+        _showSuccessDialog();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['message'])));
+      }
+    }
   }
 
   void _showSuccessDialog() {
@@ -404,7 +561,7 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Collected ₹${_amountController.text} from ${_selectedStudent!['name']}',
+                  'Collected ₹${_amountController.text} from ${_selectedStudent!['personalDetails']['fullName']}',
                   textAlign: TextAlign.center,
                   style: const TextStyle(color: AppTheme.textSecondary),
                 ),
@@ -416,6 +573,7 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
                       _selectedStudent = null;
                       _amountController.clear();
                     });
+                    _fetchFeesData(); // Refresh stats and list
                   },
                   style: ElevatedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 45),

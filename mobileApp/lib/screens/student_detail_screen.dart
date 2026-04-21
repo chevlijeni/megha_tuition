@@ -1,78 +1,171 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
-class StudentDetailScreen extends StatelessWidget {
+import 'package:intl/intl.dart';
+import '../utils/api_service.dart';
+import 'add_student_wizard.dart';
+
+class StudentDetailScreen extends StatefulWidget {
+  final String mongoId;
   final String studentName;
   final String studentId;
 
   const StudentDetailScreen({
     super.key,
+    required this.mongoId,
     required this.studentName,
     required this.studentId,
   });
 
   @override
+  State<StudentDetailScreen> createState() => _StudentDetailScreenState();
+}
+
+class _StudentDetailScreenState extends State<StudentDetailScreen> {
+  bool _isLoading = true;
+  Map<String, dynamic>? _studentData;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchStudentDetails();
+  }
+
+  Future<void> _fetchStudentDetails() async {
+    setState(() => _isLoading = true);
+    final result = await ApiService.getStudentById(widget.mongoId);
+    
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        if (result['success']) {
+          _studentData = result['data'];
+        }
+      });
+    }
+  }
+
+  String _formatDate(String? dateStr) {
+    if (dateStr == null) return 'N/A';
+    try {
+      final date = DateTime.parse(dateStr);
+      return DateFormat('dd MMM yyyy').format(date);
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          toolbarHeight: 70,
+          flexibleSpace: Container(decoration: AppTheme.headerDecoration),
+          title: const Text('Student Profile', style: TextStyle(color: Colors.white)),
+        ),
+        body: const Center(child: CircularProgressIndicator(color: AppTheme.primaryBlue)),
+      );
+    }
+
+    if (_studentData == null) {
+      return Scaffold(
+        appBar: AppBar(toolbarHeight: 70, flexibleSpace: Container(decoration: AppTheme.headerDecoration)),
+        body: const Center(child: Text('Failed to load student details')),
+      );
+    }
+
+    final personal = _studentData!['personalDetails'] ?? {};
+    final academic = _studentData!['academicDetails'] ?? {};
+    final fee = _studentData!['feeDetails'] ?? {};
+    final parent = _studentData!['parentDetails'] ?? {};
+
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 70,
         flexibleSpace: Container(
           decoration: AppTheme.headerDecoration,
         ),
-        title: const Text(
-          'Student Profile',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit_rounded, color: Colors.white),
+            onPressed: () {
+              if (_studentData != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddStudentWizard(initialData: _studentData),
+                  ),
+                ).then((_) => _fetchStudentDetails()); // Refresh after edit
+              }
+            },
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildProfileHeader(),
-            _buildDetailSection(
-              'Personal Details',
-              Icons.person_outline,
-              {
-                'Full Name': studentName,
-                'DOB': '12 May 2008',
-                'Gender': 'Male',
-                'Class': 'Grade 10',
-              },
-            ),
-            _buildDetailSection(
-              'Academic Details',
-              Icons.school_outlined,
-              {
-                'Division': 'A',
-                'Board': 'GSEB',
-                'Subjects': 'Maths, Science, English',
-                'Enrollment': '01 June 2023',
-              },
-            ),
-            _buildDetailSection(
-              'Fee Details',
-              Icons.payments_outlined,
-              {
-                'Fee Amount': '₹ 5,000 / month',
-                'Due Date': '10th of Month',
-                'Discount': '₹ 0',
-                'Net Payable': '₹ 5,000',
-              },
-            ),
-            _buildDetailSection(
-              'Parent Details',
-              Icons.family_restroom_outlined,
-              {
-                'Guardian': 'Robert Smith',
-                'Relationship': 'Father',
-                'Mobile': '+91 98765-43210',
-                'Address': '123, Street Name, City',
-              },
-            ),
-            const SizedBox(height: 32),
-          ],
+      body: RefreshIndicator(
+        onRefresh: _fetchStudentDetails,
+        color: AppTheme.primaryBlue,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              _buildProfileHeader(),
+              _buildDetailSection(
+                'Personal Details',
+                Icons.person_outline,
+                {
+                  'Full Name': personal['fullName'] ?? widget.studentName,
+                  'DOB': _formatDate(personal['dob']),
+                  'Gender': personal['gender'] ?? 'N/A',
+                  'Status': _studentData!['status'] ?? 'Active',
+                },
+              ),
+              _buildDetailSection(
+                'Academic Details',
+                Icons.school_outlined,
+                {
+                  'Class': academic['className'] ?? 'N/A',
+                  'Board': academic['board'] ?? 'N/A',
+                  'Batch': academic['batchTime'] ?? 'N/A',
+                  'School': academic['schoolName'] ?? 'N/A',
+                  'Enrollment': _formatDate(academic['enrollmentDate']),
+                },
+              ),
+              _buildDetailSection(
+                'Fee Details',
+                Icons.payments_outlined,
+                {
+                  'Fee Amount': '₹ ${fee['feeAmount'] ?? 0}',
+                  'Due Day': '${fee['dueDayOfMonth'] ?? 1}${_getDaySuffix(fee['dueDayOfMonth'] ?? 1)} of Month',
+                  'Cycle': fee['billCycle'] ?? 'N/A',
+                },
+              ),
+              _buildDetailSection(
+                'Parent Details',
+                Icons.family_restroom_outlined,
+                {
+                  'Guardian': parent['parentName'] ?? 'N/A',
+                  'Mobile': parent['mobileNumber'] ?? 'N/A',
+                  'Address': parent['address'] ?? 'N/A',
+                },
+              ),
+              const SizedBox(height: 32),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  String _getDaySuffix(int day) {
+    if (day >= 11 && day <= 13) return 'th';
+    switch (day % 10) {
+      case 1: return 'st';
+      case 2: return 'nd';
+      case 3: return 'rd';
+      default: return 'th';
+    }
   }
 
   Widget _buildProfileHeader() {
@@ -86,17 +179,17 @@ class StudentDetailScreen extends StatelessWidget {
             radius: 50,
             backgroundColor: Colors.white,
             child: Text(
-              studentName.split(' ').map((e) => e[0]).join(''),
+              widget.studentName.split(' ').map((e) => e[0]).join(''),
               style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
             ),
           ),
           const SizedBox(height: 16),
           Text(
-            studentName,
+            widget.studentName,
             style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
           ),
           Text(
-            studentId,
+            widget.studentId,
             style: const TextStyle(fontSize: 16, color: Colors.white70),
           ),
         ],

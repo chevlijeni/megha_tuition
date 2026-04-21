@@ -59,13 +59,13 @@ exports.login = catchAsync(async (req, res, next) => {
     // Check for user
     const user = await User.findOne({ username });
     if (!user) {
-        return sendResponse(res, 401, 'Invalid credentials');
+        return sendResponse(res, 401, 'Username not found');
     }
 
     // Check if password matches
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-        return sendResponse(res, 401, 'Invalid credentials');
+        return sendResponse(res, 401, 'Incorrect password');
     }
 
     sendTokenResponse(user, 200, res);

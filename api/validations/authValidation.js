@@ -2,7 +2,7 @@ const { check } = require('express-validator');
 
 exports.registerValidate = [
     check('username', 'Please include a valid username').notEmpty(),
-    check('password', 'Please enter a password with 6 or more characters').isLength({ min: 6 })
+    check('password', 'Password is required').notEmpty()
 ];
 
 exports.loginValidate = [

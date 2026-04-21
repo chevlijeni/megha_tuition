@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
+import '../utils/api_service.dart';
 import '../widgets/status_chip.dart';
 import 'add_student_wizard.dart';
 import 'student_detail_screen.dart';
+import 'package:intl/intl.dart';
 
 class StudentListScreen extends StatefulWidget {
   const StudentListScreen({super.key});
@@ -15,26 +17,51 @@ class _StudentListScreenState extends State<StudentListScreen> {
   String _searchQuery = '';
   String _selectedBatch = 'All';
   String _selectedClass = 'All';
+  String _selectedBoard = 'All';
+  bool _isLoading = false;
+  List<dynamic> _allStudents = [];
 
-  // Mock student data for demonstration
-  final List<Map<String, String>> _allStudents = [
-    {'name': 'Jane Smith', 'id': 'STU001', 'class': 'Grade 10', 'batch': 'Morning', 'fee': '₹6,500', 'status': 'Pending'},
-    {'name': 'John Doe', 'id': 'STU002', 'class': 'Grade 9', 'batch': 'Afternoon', 'fee': '₹5,000', 'status': 'Paid'},
-    {'name': 'Alice Johnson', 'id': 'STU003', 'class': 'Grade 10', 'batch': 'Evening', 'fee': '₹6,500', 'status': 'Pending'},
-    {'name': 'Bob Brown', 'id': 'STU004', 'class': 'Grade 8', 'batch': 'Morning', 'fee': '₹4,500', 'status': 'Paid'},
-    {'name': 'Charlie Davis', 'id': 'STU005', 'class': 'Pre Primary', 'batch': 'Morning', 'fee': '₹3,500', 'status': 'Pending'},
-    {'name': 'Diana Prince', 'id': 'STU006', 'class': 'Grade 7', 'batch': 'Afternoon', 'fee': '₹4,000', 'status': 'Paid'},
-    {'name': 'Ethan Hunt', 'id': 'STU007', 'class': 'Grade 9', 'batch': 'Evening', 'fee': '₹5,000', 'status': 'Pending'},
-    {'name': 'Fiona Gallagher', 'id': 'STU008', 'class': 'Grade 10', 'batch': 'Morning', 'fee': '₹6,500', 'status': 'Paid'},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchStudents();
+  }
 
-  List<Map<String, String>> get _filteredStudents {
+  Future<void> _fetchStudents() async {
+    setState(() => _isLoading = true);
+    final result = await ApiService.getStudents();
+    
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        if (result['success']) {
+          _allStudents = result['data'];
+        } else {
+          // You could show a snackbar here if desired
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(result['message']), backgroundColor: AppTheme.errorRed),
+          );
+        }
+      });
+    }
+  }
+
+  List<dynamic> get _filteredStudents {
     return _allStudents.where((student) {
-      final matchesSearch = student['name']!.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          student['id']!.toLowerCase().contains(_searchQuery.toLowerCase());
-      final matchesBatch = _selectedBatch == 'All' || student['batch'] == _selectedBatch;
-      final matchesClass = _selectedClass == 'All' || student['class'] == _selectedClass;
-      return matchesSearch && matchesBatch && matchesClass;
+      final personal = student['personalDetails'] ?? {};
+      final academic = student['academicDetails'] ?? {};
+      
+      final name = personal['fullName']?.toString().toLowerCase() ?? '';
+      final id = student['studentId']?.toString().toLowerCase() ?? '';
+      
+      final matchesSearch = name.contains(_searchQuery.toLowerCase()) ||
+          id.contains(_searchQuery.toLowerCase());
+          
+      final matchesBatch = _selectedBatch == 'All' || academic['batchTime'] == _selectedBatch;
+      final matchesClass = _selectedClass == 'All' || academic['className'] == _selectedClass;
+      final matchesBoard = _selectedBoard == 'All' || academic['board'] == _selectedBoard;
+      
+      return matchesSearch && matchesBatch && matchesClass && matchesBoard;
     }).toList();
   }
 
@@ -104,28 +131,39 @@ class _StudentListScreenState extends State<StudentListScreen> {
           const SizedBox(height: 8),
           
           Expanded(
-            child: _filteredStudents.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.search_off_rounded, size: 64, color: Colors.grey.shade300),
-                        const SizedBox(height: 16),
-                        Text(
-                          'No students found',
-                          style: TextStyle(color: Colors.grey.shade500, fontSize: 16),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                    itemCount: _filteredStudents.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      return _buildStudentCard(context, _filteredStudents[index]);
-                    },
-                  ),
+            child: _isLoading 
+              ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryBlue))
+              : RefreshIndicator(
+                onRefresh: _fetchStudents,
+                color: AppTheme.primaryBlue,
+                child: _filteredStudents.isEmpty
+                    ? ListView( // Using ListView so RefreshIndicator works even when empty
+                        children: [
+                          SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+                          Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.search_off_rounded, size: 64, color: Colors.grey.shade300),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'No students found',
+                                  style: TextStyle(color: Colors.grey.shade500, fontSize: 16),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                        itemCount: _filteredStudents.length,
+                        separatorBuilder: (context, index) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          return _buildStudentCard(context, _filteredStudents[index]);
+                        },
+                      ),
+              ),
           ),
         ],
       ),
@@ -133,7 +171,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
   }
 
   Widget _buildFilterBar() {
-    final bool hasFilters = _searchQuery.isNotEmpty || _selectedBatch != 'All' || _selectedClass != 'All';
+    final bool hasFilters = _searchQuery.isNotEmpty || _selectedBatch != 'All' || _selectedClass != 'All' || _selectedBoard != 'All';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -157,6 +195,13 @@ class _StudentListScreenState extends State<StudentListScreen> {
                     items: ['All', 'Pre Primary', ...List.generate(9, (i) => 'Grade ${i + 1}')],
                     onChanged: (val) => setState(() => _selectedClass = val!),
                   ),
+                  const SizedBox(width: 8),
+                  _buildDropdownFilter(
+                    label: 'Board',
+                    value: _selectedBoard,
+                    items: ['All', 'GSEB', 'CBSC'],
+                    onChanged: (val) => setState(() => _selectedBoard = val!),
+                  ),
                 ],
               ),
             ),
@@ -169,6 +214,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
                   _searchQuery = '';
                   _selectedBatch = 'All';
                   _selectedClass = 'All';
+                  _selectedBoard = 'All';
                 });
               },
               icon: const Icon(Icons.restart_alt_rounded, color: AppTheme.errorRed),
@@ -231,6 +277,8 @@ class _StudentListScreenState extends State<StudentListScreen> {
               value: itemValue,
               child: Text(
                 itemValue,
+                softWrap: false,
+                overflow: TextOverflow.visible,
                 style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
               ),
             );
@@ -240,7 +288,17 @@ class _StudentListScreenState extends State<StudentListScreen> {
     );
   }
 
-  Widget _buildStudentCard(BuildContext context, Map<String, String> student) {
+  Widget _buildStudentCard(BuildContext context, dynamic student) {
+    final personal = student['personalDetails'] ?? {};
+    final academic = student['academicDetails'] ?? {};
+    final fee = student['feeDetails'] ?? {};
+    
+    final name = personal['fullName'] ?? 'Unknown';
+    final studentId = student['studentId'] ?? 'N/A';
+    final className = academic['className'] ?? '';
+    final feeAmount = fee['feeAmount']?.toString() ?? '0';
+    final status = student['status'] ?? 'Active';
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -259,7 +317,11 @@ class _StudentListScreenState extends State<StudentListScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => StudentDetailScreen(studentName: student['name']!, studentId: student['id']!),
+              builder: (context) => StudentDetailScreen(
+                mongoId: student['_id'],
+                studentName: name, 
+                studentId: studentId,
+              ),
             ),
           );
         },
@@ -289,7 +351,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      student['name']!,
+                      name,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
                         fontSize: 16,
@@ -297,7 +359,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${student['id']} • ${student['class']}',
+                      '$className • ${academic['board'] ?? ''} • ${academic['batchTime'] ?? ''}',
                       style: TextStyle(
                         color: AppTheme.textSecondary.withOpacity(0.7),
                         fontSize: 12,
@@ -311,8 +373,8 @@ class _StudentListScreenState extends State<StudentListScreen> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    student['fee']!,
-                    style: TextStyle(
+                    '₹$feeAmount',
+                    style: const TextStyle(
                       fontWeight: FontWeight.w800,
                       color: AppTheme.primaryBlue,
                       fontSize: 15,
@@ -320,8 +382,8 @@ class _StudentListScreenState extends State<StudentListScreen> {
                   ),
                   const SizedBox(height: 6),
                   StatusChip(
-                    label: student['status']!,
-                    color: student['status'] == 'Paid' ? AppTheme.successGreen : AppTheme.warningYellow,
+                    label: status,
+                    color: status == 'Active' ? AppTheme.successGreen : AppTheme.errorRed,
                   ),
                 ],
               ),
