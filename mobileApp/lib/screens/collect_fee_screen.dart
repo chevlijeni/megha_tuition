@@ -402,19 +402,22 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
     final academic = _selectedStudent!['academicDetails'] ?? {};
     final name = personal['fullName'] ?? 'Unknown';
     final feeAmount = _selectedStudent!['feeDetails']?['feeAmount'] ?? 0;
+    
+    final bool isPaid = _selectedStudent!['isPaidCurrentMonth'] ?? false;
+    final paymentDateStr = isPaid ? _selectedStudent!['paymentDetails']['paymentDate'] : null;
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.primaryBlue.withOpacity(0.05),
+        color: isPaid ? AppTheme.successGreen.withOpacity(0.05) : AppTheme.primaryBlue.withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.primaryBlue.withOpacity(0.1)),
+        border: Border.all(color: isPaid ? AppTheme.successGreen.withOpacity(0.2) : AppTheme.primaryBlue.withOpacity(0.1)),
       ),
       child: Row(
         children: [
-          const CircleAvatar(
-            backgroundColor: AppTheme.primaryBlue,
-            child: Icon(Icons.person, color: Colors.white),
+          CircleAvatar(
+            backgroundColor: isPaid ? AppTheme.successGreen : AppTheme.primaryBlue,
+            child: Icon(isPaid ? Icons.check : Icons.person, color: Colors.white),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -426,6 +429,27 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
                   'ID: ${_selectedStudent!['studentId']} • ${academic['className']} • Fee: ₹$feeAmount',
                   style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
                 ),
+                if (isPaid && paymentDateStr != null) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppTheme.successGreen.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.info_outline, color: AppTheme.successGreen, size: 14),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Fees already collected on ${DateFormat('dd MMM yyyy').format(DateTime.parse(paymentDateStr).toLocal())}',
+                          style: const TextStyle(color: AppTheme.successGreen, fontSize: 11, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -445,6 +469,8 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
   }
 
   Widget _buildPaymentForm() {
+    final bool isPaid = _selectedStudent!['isPaidCurrentMonth'] ?? false;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -455,6 +481,7 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
         const SizedBox(height: 16),
         TextField(
           controller: _amountController,
+          enabled: !isPaid,
           keyboardType: TextInputType.number,
           decoration: const InputDecoration(
             labelText: 'Amount to Collect',
@@ -473,7 +500,7 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
               child: ChoiceChip(
                 label: Text(mode),
                 selected: isSelected,
-                onSelected: (val) {
+                onSelected: isPaid ? null : (val) {
                   setState(() => _selectedMode = mode);
                 },
                 selectedColor: AppTheme.primaryBlue.withOpacity(0.2),
@@ -488,20 +515,22 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
         const SizedBox(height: 16),
         TextField(
           controller: _referenceController,
-          decoration: InputDecoration(
+          enabled: !isPaid,
+          decoration: const InputDecoration(
             labelText: 'Reference Number (Optional)',
             hintText: 'TXN123456789',
           ),
         ),
         const SizedBox(height: 48),
         ElevatedButton.icon(
-          onPressed: _isLoading ? null : () => _handleCollectPayment(),
+          onPressed: (_isLoading || isPaid) ? null : () => _handleCollectPayment(),
           icon: _isLoading 
             ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-            : const Icon(Icons.account_balance_wallet_outlined),
-          label: Text(_isLoading ? 'Processing...' : 'Collect Payment'),
+            : Icon(isPaid ? Icons.check_circle_outline : Icons.account_balance_wallet_outlined),
+          label: Text(_isLoading ? 'Processing...' : (isPaid ? 'Already Collected' : 'Collect Payment')),
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 16),
+            backgroundColor: isPaid ? Colors.grey[400] : null,
           ),
         ),
       ],

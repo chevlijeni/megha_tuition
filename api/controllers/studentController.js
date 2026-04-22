@@ -4,11 +4,44 @@ const Payment = require('../models/Payment');
 const catchAsync = require('../utils/catchAsync');
 const { sendResponse } = require('../utils/responseHelper');
 
-// @desc    Get all students
+// @desc    Get all students with payment status for current month
 // @route   GET /api/v1/students
 // @access  Private
 exports.getStudents = catchAsync(async (req, res, next) => {
-    const students = await Student.find().sort({ createdAt: -1 });
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+
+    const students = await Student.aggregate([
+        {
+            $lookup: {
+                from: 'payments',
+                let: { studentId: '$_id' },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $and: [
+                                    { $eq: ['$student', '$$studentId'] },
+                                    { $eq: ['$month', currentMonth] },
+                                    { $eq: ['$year', currentYear] }
+                                ]
+                            }
+                        }
+                    }
+                ],
+                as: 'currentMonthPayment'
+            }
+        },
+        {
+            $addFields: {
+                isPaidCurrentMonth: { $gt: [{ $size: '$currentMonthPayment' }, 0] },
+                paymentDetails: { $arrayElemAt: ['$currentMonthPayment', 0] }
+            }
+        },
+        { $sort: { createdAt: -1 } }
+    ]);
+    
     sendResponse(res, 200, 'Success', students);
 });
 
@@ -120,6 +153,17 @@ exports.collectPayment = catchAsync(async (req, res, next) => {
     const now = new Date();
     const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
+
+    // Check if payment already exists for this month
+    const existingPayment = await Payment.findOne({
+        student: studentId,
+        month: currentMonth,
+        year: currentYear
+    });
+
+    if (existingPayment) {
+        return sendResponse(res, 400, 'Fees for this month already collected for this student.');
+    }
 
     const payment = await Payment.create({
         student: studentId,
