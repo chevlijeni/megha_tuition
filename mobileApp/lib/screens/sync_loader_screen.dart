@@ -90,44 +90,33 @@ class _SyncLoaderScreenState extends State<SyncLoaderScreen> with SingleTickerPr
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: AppTheme.primaryGradient,
-        ),
-        child: Stack(
-          children: [
-            // Background Elements (Subtle Blurs)
-            Positioned(
-              top: -100,
-              right: -100,
+      body: Stack(
+        children: [
+          // 1. Show Home Screen in background (Non-interactive)
+          const IgnorePointer(
+            child: MainScaffold(),
+          ),
+          
+          // 2. Translucent Blurred Overlay
+          Positioned.fill(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
               child: Container(
-                width: 300,
-                height: 300,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.05),
-                ),
+                color: Colors.black.withOpacity(0.4),
               ),
             ),
+          ),
 
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Logo with Pulse
-                  FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: SvgPicture.asset(
-                      'assets/images/Logo.svg',
-                      height: 100,
-                      colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-                    ),
-                  ),
-                  const SizedBox(height: 48),
-                  
-                  // Loader Card
+          // 3. Center Loader
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (!_hasError) ...[
+                  // Premium Learning Animation (Direct)
+                  const LearningAnimation(),
+                ] else ...[
+                  // Error Box (Keep this for retryability)
                   ClipRRect(
                     borderRadius: BorderRadius.circular(24),
                     child: BackdropFilter(
@@ -145,79 +134,161 @@ class _SyncLoaderScreenState extends State<SyncLoaderScreen> with SingleTickerPr
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (!_hasError) ...[
-                              const SizedBox(
-                                width: 40,
-                                height: 40,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 3,
-                                  color: Colors.white,
-                                ),
+                            const Icon(Icons.error_outline_rounded, color: AppTheme.errorRed, size: 48),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'Sync Failed',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
                               ),
-                              const SizedBox(height: 24),
-                              Text(
-                                _statusMessage,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _errorMessage ?? 'Unknown error',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.7),
+                                fontSize: 14,
                               ),
-                            ] else ...[
-                              const Icon(Icons.error_outline_rounded, color: AppTheme.errorRed, size: 48),
-                              const SizedBox(height: 16),
-                              const Text(
-                                'Sync Failed',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            ),
+                            const SizedBox(height: 24),
+                            ElevatedButton(
+                              onPressed: _performSync,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: AppTheme.primaryBlue,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                _errorMessage ?? 'Unknown error',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.7),
-                                  fontSize: 14,
-                                ),
+                              child: const Text('RETRY'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                ApiService.clearToken();
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                                );
+                              },
+                              child: const Text(
+                                'LOGOUT',
+                                style: TextStyle(color: Colors.white60),
                               ),
-                              const SizedBox(height: 24),
-                              ElevatedButton(
-                                onPressed: _performSync,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  foregroundColor: AppTheme.primaryBlue,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                ),
-                                child: const Text('RETRY'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  ApiService.clearToken();
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(builder: (context) => const LoginScreen()),
-                                  );
-                                },
-                                child: const Text(
-                                  'LOGOUT',
-                                  style: TextStyle(color: Colors.white60),
-                                ),
-                              ),
-                            ],
+                            ),
                           ],
                         ),
                       ),
                     ),
                   ),
                 ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class LearningAnimation extends StatefulWidget {
+  const LearningAnimation({super.key});
+
+  @override
+  State<LearningAnimation> createState() => _LearningAnimationState();
+}
+
+class _LearningAnimationState extends State<LearningAnimation> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _pulseAnimation;
+  late Animation<double> _rotateAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    )..repeat();
+
+    _pulseAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.2).chain(CurveTween(curve: Curves.easeInOut)), weight: 50),
+      TweenSequenceItem(tween: Tween(begin: 1.2, end: 1.0).chain(CurveTween(curve: Curves.easeInOut)), weight: 50),
+    ]).animate(_controller);
+
+    _rotateAnimation = Tween<double>(begin: 0.0, end: 2 * 3.14159).animate(_controller);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 120,
+      width: 120,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Orbiting Circles
+          AnimatedBuilder(
+            animation: _rotateAnimation,
+            builder: (context, child) {
+              return Transform.rotate(
+                angle: _rotateAnimation.value,
+                child: Stack(
+                  children: [
+                    _buildOrbitingIcon(Icons.edit_note_rounded, -0.6, -0.6),
+                    _buildOrbitingIcon(Icons.school_rounded, 0.6, 0.6),
+                    _buildOrbitingIcon(Icons.import_contacts_rounded, -0.6, 0.6),
+                    _buildOrbitingIcon(Icons.assignment_turned_in_rounded, 0.6, -0.6),
+                  ],
+                ),
+              );
+            },
+          ),
+          
+          // Center Pulsing Icon
+          ScaleTransition(
+            scale: _pulseAnimation,
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.white.withOpacity(0.1),
+                    blurRadius: 20,
+                    spreadRadius: 5,
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.auto_stories_rounded,
+                color: Colors.white,
+                size: 40,
               ),
             ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOrbitingIcon(IconData icon, double x, double y) {
+    return Align(
+      alignment: Alignment(x, y),
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          shape: BoxShape.circle,
         ),
+        child: Icon(icon, color: Colors.white, size: 14),
       ),
     );
   }

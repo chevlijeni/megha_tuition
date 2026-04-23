@@ -3,8 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = 'https://megha-tuition.onrender.com/api/v1';
-  // static const String baseUrl = 'http://localhost:5000/api/v1';
+  // static const String baseUrl = 'https://megha-tuition.onrender.com/api/v1';
+  static const String baseUrl = 'http://localhost:5000/api/v1';
 
   // Persistent client for connection pooling (reduces TLS handshake overhead)
   static final http.Client _client = http.Client();
@@ -395,6 +395,42 @@ class ApiService {
         return {
           'success': false,
           'message': data['message'] ?? 'Failed to collect payment'
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Connectivity problem. Please check if the server is running.'
+      };
+    }
+  }
+  // Get payments for a specific student
+  static Future<Map<String, dynamic>> getStudentPayments(String studentId) async {
+    try {
+      final token = await getToken();
+      if (token == null) {
+        return {'success': false, 'message': 'No authentication token found'};
+      }
+
+      final response = await _client.get(
+        Uri.parse('$baseUrl/students/$studentId/payments'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      ).timeout(_timeout);
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true, 
+          'message': data['message'],
+          'data': data['data']
+        };
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Failed to fetch student payments'
         };
       }
     } catch (e) {

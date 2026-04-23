@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/status_chip.dart';
-import 'student_detail_screen.dart';
 import '../utils/api_service.dart';
+import 'student_fees_history_screen.dart';
 
 class TransactionListScreen extends StatefulWidget {
   const TransactionListScreen({super.key});
@@ -158,10 +158,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => StudentDetailScreen(
-                mongoId: student['_id'],
+              builder: (context) => StudentFeesHistoryScreen(
+                studentId: student['_id'],
                 studentName: name, 
-                studentId: student['studentId'] ?? '',
+                studentRollId: student['studentId'] ?? '',
               ),
             ),
           );

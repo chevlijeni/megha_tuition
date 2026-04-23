@@ -5,7 +5,7 @@ import '../widgets/status_chip.dart';
 import 'stats_detail_screen.dart';
 import 'transaction_list_screen.dart';
 import 'add_student_wizard.dart';
-import 'student_detail_screen.dart';
+import 'student_fees_history_screen.dart';
 import '../utils/api_service.dart';
 import 'package:intl/intl.dart';
 
@@ -263,10 +263,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => StudentDetailScreen(
-                    mongoId: student['_id'],
+                  builder: (context) => StudentFeesHistoryScreen(
+                    studentId: student['_id'],
                     studentName: name, 
-                    studentId: student['studentId'] ?? '',
+                    studentRollId: student['studentId'] ?? '',
                   ),
                 ),
               ).then((_) => _fetchDashboardData());
