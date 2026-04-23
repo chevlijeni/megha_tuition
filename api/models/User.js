@@ -15,6 +15,14 @@ const userSchema = new mongoose.Schema({
         enum: ['admin', 'staff'],
         default: 'admin'
     },
+    email: {
+        type: String,
+        trim: true
+    },
+    mobileNumber: {
+        type: String,
+        trim: true
+    },
     createdAt: {
         type: Date,
         default: Date.now

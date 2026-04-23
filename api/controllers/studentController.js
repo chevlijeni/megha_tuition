@@ -72,10 +72,18 @@ exports.getSyncData = catchAsync(async (req, res, next) => {
         .sort({ paymentDate: -1 })
         .limit(20); // Only return last 20 for sync, others can be paginated if needed later
 
+    // 4. Monthly Earnings for 6 months
+    const monthlyEarnings = await Payment.aggregate([
+        { $group: { _id: { month: "$month", year: "$year" }, total: { $sum: "$amount" } } },
+        { $sort: { "_id.year": -1, "_id.month": -1 } },
+        { $limit: 6 }
+    ]);
+
     sendResponse(res, 200, 'Sync Successful', {
         stats,
         students,
-        payments
+        payments,
+        monthlyEarnings
     });
 });
 
@@ -120,15 +128,50 @@ exports.getStudents = catchAsync(async (req, res, next) => {
     sendResponse(res, 200, 'Success', students);
 });
 
-// @desc    Get single student
+// @desc    Get single student with payment status
 // @route   GET /api/v1/students/:id
 // @access  Private
 exports.getStudent = catchAsync(async (req, res, next) => {
-    const student = await Student.findById(req.params.id);
-    if (!student) {
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+    const mongoose = require('mongoose');
+
+    const result = await Student.aggregate([
+        { $match: { _id: new mongoose.Types.ObjectId(req.params.id) } },
+        {
+            $lookup: {
+                from: 'payments',
+                let: { studentId: '$_id' },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $and: [
+                                    { $eq: ['$student', '$$studentId'] },
+                                    { $eq: ['$month', currentMonth] },
+                                    { $eq: ['$year', currentYear] }
+                                ]
+                            }
+                        }
+                    }
+                ],
+                as: 'currentMonthPayment'
+            }
+        },
+        {
+            $addFields: {
+                isPaidCurrentMonth: { $gt: [{ $size: '$currentMonthPayment' }, 0] },
+                paymentDetails: { $arrayElemAt: ['$currentMonthPayment', 0] }
+            }
+        }
+    ]);
+
+    if (!result || result.length === 0) {
         return sendResponse(res, 404, 'Student not found');
     }
-    sendResponse(res, 200, 'Success', student);
+    
+    sendResponse(res, 200, 'Success', result[0]);
 });
 
 // @desc    Create new student

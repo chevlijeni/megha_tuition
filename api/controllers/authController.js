@@ -70,3 +70,25 @@ exports.login = catchAsync(async (req, res, next) => {
 
     sendTokenResponse(user, 200, res);
 });
+
+// @desc    Get current user profile
+// @route   GET /api/v1/auth/me
+// @access  Private
+exports.getMe = catchAsync(async (req, res, next) => {
+    sendResponse(res, 200, 'Success', req.user);
+});
+
+// @desc    Update current user profile
+// @route   PUT /api/v1/auth/me
+// @access  Private
+exports.updateMe = catchAsync(async (req, res, next) => {
+    const { username, email, mobileNumber } = req.body;
+    
+    const user = await User.findByIdAndUpdate(
+        req.user._id,
+        { username, email, mobileNumber },
+        { new: true, runValidators: true }
+    );
+
+    sendResponse(res, 200, 'Profile updated successfully', user);
+});
