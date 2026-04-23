@@ -135,22 +135,25 @@ class _StatsDetailScreenState extends State<StatsDetailScreen> {
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         subtitle: Text(
-          '${academic['className'] ?? ''} • $rollId',
-          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+          '${academic['className'] ?? ''} • ${academic['board'] ?? ''} • ${academic['batchTime'] ?? ''}',
+          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
         ),
-        trailing: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '₹$amount',
-              style: TextStyle(fontWeight: FontWeight.bold, color: widget.themeColor, fontSize: 14),
-            ),
-            StatusChip(
-              label: student['isPaidCurrentMonth'] == true ? 'Paid' : 'Pending',
-              color: student['isPaidCurrentMonth'] == true ? AppTheme.successGreen : AppTheme.errorRed,
-            ),
-          ],
+        trailing: SizedBox(
+          height: 48,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '₹$amount',
+                style: TextStyle(fontWeight: FontWeight.bold, color: widget.themeColor, fontSize: 13),
+              ),
+              StatusChip(
+                label: student['isPaidCurrentMonth'] == true ? 'Paid' : 'Pending',
+                color: student['isPaidCurrentMonth'] == true ? AppTheme.successGreen : AppTheme.errorRed,
+              ),
+            ],
+          ),
         ),
         onTap: () {
           Navigator.push(
