@@ -219,6 +219,24 @@ exports.getPayments = catchAsync(async (req, res, next) => {
     sendResponse(res, 200, 'Success', payments);
 });
 
+// @desc    Get payments for a specific student
+// @route   GET /api/v1/students/:id/payments
+// @access  Private
+exports.getStudentPayments = catchAsync(async (req, res, next) => {
+    const student = await Student.findById(req.params.id);
+    if (!student) {
+        return sendResponse(res, 404, 'Student not found');
+    }
+
+    const payments = await Payment.find({ student: req.params.id })
+        .sort({ paymentDate: -1 });
+    
+    sendResponse(res, 200, 'Success', {
+        student,
+        payments
+    });
+});
+
 // @desc    Collect fee payment
 // @route   POST /api/v1/students/collect-fee
 // @access  Private
