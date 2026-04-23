@@ -5,6 +5,7 @@ import '../widgets/status_chip.dart';
 import 'stats_detail_screen.dart';
 import 'transaction_list_screen.dart';
 import 'add_student_wizard.dart';
+import 'student_list_screen.dart';
 import 'student_fees_history_screen.dart';
 import '../utils/api_service.dart';
 import 'package:intl/intl.dart';
@@ -51,7 +52,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     } else if (type == 'Collections') {
       Navigator.push(context, MaterialPageRoute(builder: (context) => const TransactionListScreen()));
     } else if (type == 'Pending') {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => const StudentListScreen(showOnlyPending: true)));
+      Navigator.push(context, MaterialPageRoute(builder: (context) => StudentListScreen(showOnlyPending: true)));
     }
   }
 

@@ -61,6 +61,9 @@ class _StudentListScreenState extends State<StudentListScreen> {
       final matchesSearch = name.contains(_searchQuery.toLowerCase()) ||
           id.contains(_searchQuery.toLowerCase());
           
+      final matchesBatch = _selectedBatch == 'All' || academic['batchTime'] == _selectedBatch;
+      final matchesClass = _selectedClass == 'All' || academic['className'] == _selectedClass;
+      final matchesBoard = _selectedBoard == 'All' || academic['board'] == _selectedBoard;
       final matchesPending = !_showPendingOnly || student['isPaidCurrentMonth'] == false;
       
       return matchesSearch && matchesBatch && matchesClass && matchesBoard && matchesPending;
