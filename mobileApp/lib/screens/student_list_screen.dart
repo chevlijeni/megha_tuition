@@ -27,9 +27,11 @@ class _StudentListScreenState extends State<StudentListScreen> {
     _fetchStudents();
   }
 
-  Future<void> _fetchStudents() async {
-    setState(() => _isLoading = true);
-    final result = await ApiService.getStudents();
+  Future<void> _fetchStudents({bool forceRefresh = false}) async {
+    setState(() => _isLoading = !forceRefresh && _allStudents.isEmpty);
+    
+    // Pass useCache: !forceRefresh to indicate whether to use cache or hit network
+    final result = await ApiService.getStudents(useCache: !forceRefresh);
     
     if (mounted) {
       setState(() {
@@ -37,7 +39,6 @@ class _StudentListScreenState extends State<StudentListScreen> {
         if (result['success']) {
           _allStudents = result['data'];
         } else {
-          // You could show a snackbar here if desired
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(result['message']), backgroundColor: AppTheme.errorRed),
           );
@@ -134,7 +135,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
             child: _isLoading 
               ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryBlue))
               : RefreshIndicator(
-                onRefresh: _fetchStudents,
+                onRefresh: () => _fetchStudents(forceRefresh: true),
                 color: AppTheme.primaryBlue,
                 child: _filteredStudents.isEmpty
                     ? ListView( // Using ListView so RefreshIndicator works even when empty

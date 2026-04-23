@@ -27,20 +27,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _fetchDashboardData();
   }
 
-  Future<void> _fetchDashboardData() async {
-    setState(() => _isLoading = true);
+  Future<void> _fetchDashboardData({bool forceRefresh = false}) async {
+    setState(() => _isLoading = !forceRefresh && _stats == null);
     
-    final statsResult = await ApiService.getDashboardStats();
-    final paymentsResult = await ApiService.getPayments();
+    // Use the sync data which includes stats and payments
+    final result = await ApiService.getSyncData(forceRefresh: forceRefresh);
     
     if (mounted) {
       setState(() {
-        if (statsResult['success']) {
-          _stats = statsResult['data'];
-        }
-        if (paymentsResult['success']) {
+        if (result['success']) {
+          _stats = result['data']['stats'];
           // Take only the first 4 for the recent list
-          _recentPayments = (paymentsResult['data'] as List).take(4).toList();
+          _recentPayments = (result['data']['payments'] as List).take(4).toList();
         }
         _isLoading = false;
       });
@@ -93,7 +91,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: _fetchDashboardData,
+        onRefresh: () => _fetchDashboardData(forceRefresh: true),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),

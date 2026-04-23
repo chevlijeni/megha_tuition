@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 import '../widgets/status_chip.dart';
 import 'student_detail_screen.dart';
+import '../utils/api_service.dart';
 
 class TransactionListScreen extends StatefulWidget {
   const TransactionListScreen({super.key});
@@ -12,46 +13,54 @@ class TransactionListScreen extends StatefulWidget {
 
 class _TransactionListScreenState extends State<TransactionListScreen> {
   final TextEditingController _searchController = TextEditingController();
-  final List<Map<String, String>> _allTransactions = List.generate(20, (index) {
-    final names = ['Ankit Sharma', 'Jane Doe', 'Rahul Patel', 'Sneha Gupta', 'Mehul Mehta'];
-    final parents = ['Rajesh Sharma', 'Robert Doe', 'Suresh Patel', 'Sunita Gupta', 'Vijay Mehta'];
-    final stds = ['10', '9', '10', '8', '7'];
-    final mobiles = ['9876543210', '8765432109', '7654321098', '6543210987', '5432109876'];
-    
-    return {
-      'name': names[index % names.length],
-      'parent': parents[index % parents.length],
-      'std': stds[index % stds.length],
-      'mobile': mobiles[index % mobiles.length],
-      'id': 'TXN_ID_$index',
-      'date': '12/04/2026',
-      'amount': '₹5,000',
-      'status': 'Paid',
-    };
-  });
-
-  List<Map<String, String>> _filteredTransactions = [];
+  List<dynamic> _allTransactions = [];
+  List<dynamic> _filteredTransactions = [];
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _filteredTransactions = _allTransactions;
+    _fetchTransactions();
     _searchController.addListener(_filterTransactions);
+  }
+
+  Future<void> _fetchTransactions({bool forceRefresh = false}) async {
+    setState(() => _isLoading = !forceRefresh && _allTransactions.isEmpty);
+    
+    final result = await ApiService.getPayments(useCache: !forceRefresh);
+    
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        if (result['success']) {
+          _allTransactions = result['data'];
+          _filteredTransactions = _allTransactions;
+        }
+      });
+    }
   }
 
   void _filterTransactions() {
     final query = _searchController.text.toLowerCase();
     
     setState(() {
-      if (query.length < 3) {
+      if (query.isEmpty) {
         _filteredTransactions = _allTransactions;
       } else {
-        _filteredTransactions = _allTransactions.where((txn) {
-          return txn['name']!.toLowerCase().contains(query) ||
-                 txn['id']!.toLowerCase().contains(query) ||
-                 txn['mobile']!.toLowerCase().contains(query) ||
-                 txn['parent']!.toLowerCase().contains(query) ||
-                 txn['std']!.toLowerCase().contains(query);
+        _filteredTransactions = _allTransactions.where((payment) {
+          final student = payment['student'] ?? {};
+          final personal = student['personalDetails'] ?? {};
+          final academic = student['academicDetails'] ?? {};
+          
+          final name = personal['fullName']?.toString().toLowerCase() ?? '';
+          final mobile = personal['phoneNumber']?.toString().toLowerCase() ?? '';
+          final className = academic['className']?.toString().toLowerCase() ?? '';
+          final ref = payment['receiptNumber']?.toString().toLowerCase() ?? '';
+          
+          return name.contains(query) ||
+                 mobile.contains(query) ||
+                 ref.contains(query) ||
+                 className.contains(query);
         }).toList();
       }
     });
@@ -104,36 +113,59 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
               ),
             ),
           Expanded(
-            child: _filteredTransactions.isEmpty
-                ? const Center(child: Text('No transactions found'))
-                : ListView.separated(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: _filteredTransactions.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      return _buildTransactionItem(context, _filteredTransactions[index], index);
-                    },
-                  ),
+            child: _isLoading 
+              ? const Center(child: CircularProgressIndicator())
+              : RefreshIndicator(
+                  onRefresh: () => _fetchTransactions(forceRefresh: true),
+                  child: _filteredTransactions.isEmpty
+                    ? ListView(
+                        children: [
+                          SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+                          const Center(child: Text('No transactions found')),
+                        ],
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: _filteredTransactions.length,
+                        separatorBuilder: (context, index) => const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          return _buildTransactionItem(context, _filteredTransactions[index]);
+                        },
+                      ),
+              ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTransactionItem(BuildContext context, Map<String, String> txn, int index) {
-    final name = txn['name']!;
+  Widget _buildTransactionItem(BuildContext context, dynamic payment) {
+    final student = payment['student'] ?? {};
+    final personal = student['personalDetails'] ?? {};
+    final academic = student['academicDetails'] ?? {};
+    final name = personal['fullName'] ?? 'Unknown Student';
+    final amount = payment['amount'] ?? 0;
+    
+    String dateStr = 'Unknown Date';
+    if (payment['paymentDate'] != null) {
+      final date = DateTime.parse(payment['paymentDate']).toLocal();
+      dateStr = '${date.day}/${date.month}/${date.year}';
+    }
+
     return InkWell(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => StudentDetailScreen(
-              mongoId: 'mock_${txn['id']}',
-              studentName: name, 
-              studentId: 'STU001',
+        if (student['_id'] != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => StudentDetailScreen(
+                mongoId: student['_id'],
+                studentName: name, 
+                studentId: student['studentId'] ?? '',
+              ),
             ),
-          ),
-        );
+          );
+        }
       },
       borderRadius: BorderRadius.circular(16),
       child: Container(
@@ -147,7 +179,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           children: [
             CircleAvatar(
               backgroundColor: AppTheme.primaryBlue.withOpacity(0.1),
-              child: Text(name.split(' ').map((e) => e[0]).join(''), style: const TextStyle(color: AppTheme.primaryBlue)),
+              child: Text(name.isNotEmpty ? name[0] : '?', style: const TextStyle(color: AppTheme.primaryBlue)),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -158,7 +190,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     name,
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
-                  Text('Class ${txn['std']} • ${txn['mobile']}', style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
+                  Text('Class ${academic['className'] ?? ''} • $dateStr', style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
                 ],
               ),
             ),
@@ -166,10 +198,10 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  txn['amount']!,
+                  '₹$amount',
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
-                StatusChip(label: txn['status']!, color: AppTheme.successGreen),
+                StatusChip(label: payment['paymentMethod'] ?? 'Paid', color: AppTheme.successGreen),
               ],
             ),
           ],

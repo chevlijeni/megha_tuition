@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../theme/app_theme.dart';
 import '../utils/api_service.dart';
 import 'main_scaffold.dart';
+import 'sync_loader_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -64,7 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (result['success']) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const MainScaffold()),
+        MaterialPageRoute(builder: (context) => const SyncLoaderScreen()),
       );
     } else {
       _showTopError(result['message']);

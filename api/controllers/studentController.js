@@ -4,6 +4,81 @@ const Payment = require('../models/Payment');
 const catchAsync = require('../utils/catchAsync');
 const { sendResponse } = require('../utils/responseHelper');
 
+// @desc    Sync all home data (stats, students, payments)
+// @route   GET /api/v1/students/sync
+// @access  Private
+exports.getSyncData = catchAsync(async (req, res, next) => {
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+
+    // 1. Get Stats (Simplified logic from getDashboardStats)
+    const totalStudents = await Student.countDocuments({ status: 'Active' });
+    const studentsListRaw = await Student.find({ status: 'Active' }, 'feeDetails.feeAmount');
+    const totalFees = studentsListRaw.reduce((sum, s) => sum + (s.feeDetails.feeAmount || 0), 0);
+    const paymentsCurrentMonth = await Payment.find({ month: currentMonth, year: currentYear });
+    const totalCollection = paymentsCurrentMonth.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const pendingFees = totalFees - totalCollection;
+
+    const startOfToday = new Date(new Date().setHours(0, 0, 0, 0));
+    const endOfToday = new Date(new Date().setHours(23, 59, 59, 999));
+    const todayPayments = await Payment.find({ paymentDate: { $gte: startOfToday, $lte: endOfToday } });
+    const collectedToday = todayPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const transactionsToday = todayPayments.length;
+
+    const stats = {
+        totalStudents,
+        totalFees,
+        totalCollection,
+        pendingFees,
+        collectedToday,
+        transactionsToday
+    };
+
+    // 2. Get Students (Logic from getStudents)
+    const students = await Student.aggregate([
+        {
+            $lookup: {
+                from: 'payments',
+                let: { studentId: '$_id' },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $and: [
+                                    { $eq: ['$student', '$$studentId'] },
+                                    { $eq: ['$month', currentMonth] },
+                                    { $eq: ['$year', currentYear] }
+                                ]
+                            }
+                        }
+                    }
+                ],
+                as: 'currentMonthPayment'
+            }
+        },
+        {
+            $addFields: {
+                isPaidCurrentMonth: { $gt: [{ $size: '$currentMonthPayment' }, 0] },
+                paymentDetails: { $arrayElemAt: ['$currentMonthPayment', 0] }
+            }
+        },
+        { $sort: { createdAt: -1 } }
+    ]);
+
+    // 3. Get Recent Payments (Logic from getPayments)
+    const payments = await Payment.find()
+        .populate('student', 'personalDetails academicDetails studentId')
+        .sort({ paymentDate: -1 })
+        .limit(20); // Only return last 20 for sync, others can be paginated if needed later
+
+    sendResponse(res, 200, 'Sync Successful', {
+        stats,
+        students,
+        payments
+    });
+});
+
 // @desc    Get all students with payment status for current month
 // @route   GET /api/v1/students
 // @access  Private
