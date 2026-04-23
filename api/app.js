@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const errorHandler = require('./middlewares/errorHandler');
+const startCronPing = require('./utils/cronPing');
 
 // Route files
 const authRoutes = require('./routes/authRoutes');
@@ -26,6 +27,11 @@ app.use('/api/v1/students', studentRoutes);
 app.use('/api/v1/fees', feeRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 
+// Ping route for keep-alive cron
+app.get('/api/v1/ping', (req, res) => {
+    res.status(200).json({ success: true, message: 'Pong! Server is awake.' });
+});
+
 // Error middleware
 app.use(errorHandler);
 
@@ -37,6 +43,7 @@ const startServer = async () => {
         await connectDB();
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
+            startCronPing();
         });
     } catch (error) {
         console.error('Failed to connect to the database. Server initialization aborted.');
