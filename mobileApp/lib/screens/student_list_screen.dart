@@ -79,7 +79,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
         flexibleSpace: Container(
           decoration: AppTheme.headerDecoration,
         ),
-        automaticallyImplyLeading: false,
+        leading: Navigator.canPop(context) ? const BackButton(color: Colors.white) : null,
         title: Column(
           children: [
             Row(

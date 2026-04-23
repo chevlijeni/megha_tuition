@@ -17,6 +17,9 @@ class ApiService {
   // In-memory cache for all home data
   static Map<String, dynamic>? _cachedHomeData;
 
+  // Getter for cached home data
+  static Map<String, dynamic>? get allHomeData => _cachedHomeData;
+
   // Clear all cache
   static void clearCache() {
     _cachedHomeData = null;

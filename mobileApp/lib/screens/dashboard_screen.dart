@@ -47,13 +47,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _navigateToDetail(BuildContext context, String type) {
-    if (type == 'Students' || type == 'Expected') {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => const StudentListScreen()));
+    String title = '';
+    Color color = AppTheme.primaryBlue;
+
+    if (type == 'Students') {
+      title = 'Total Students';
+      color = AppTheme.primaryBlue;
+    } else if (type == 'Expected') {
+      // Per user request, no inner screen for Total Fees (Monthly collected)
+      return; 
     } else if (type == 'Collections') {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => const TransactionListScreen()));
+      title = 'Recent Collections';
+      color = AppTheme.successGreen;
     } else if (type == 'Pending') {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => StudentListScreen(showOnlyPending: true)));
+      title = 'Pending Fees';
+      color = AppTheme.errorRed;
     }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => StatsDetailScreen(
+          type: type,
+          title: title,
+          themeColor: color,
+        ),
+      ),
+    );
   }
 
   @override
