@@ -45,13 +45,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  void _navigateToDetail(BuildContext context, String title, Color color) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => StatsDetailScreen(title: title, themeColor: color),
-      ),
-    );
+  void _navigateToDetail(BuildContext context, String type) {
+    if (type == 'Students' || type == 'Expected') {
+      Navigator.push(context, MaterialPageRoute(builder: (context) => const StudentListScreen()));
+    } else if (type == 'Collections') {
+      Navigator.push(context, MaterialPageRoute(builder: (context) => const TransactionListScreen()));
+    } else if (type == 'Pending') {
+      Navigator.push(context, MaterialPageRoute(builder: (context) => const StudentListScreen(showOnlyPending: true)));
+    }
   }
 
   @override
@@ -117,7 +118,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    onTap: () => _navigateToDetail(context, 'Students', AppTheme.primaryBlue),
+                    onTap: () => _navigateToDetail(context, 'Students'),
                   ),
                   StatCard(
                     title: 'Total Fees',
@@ -129,7 +130,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    onTap: () => _navigateToDetail(context, 'Total Fees', AppTheme.warningYellow),
+                    onTap: () => _navigateToDetail(context, 'Expected'),
                   ),
                   StatCard(
                     title: 'Pending Fees',
@@ -141,7 +142,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    onTap: () => _navigateToDetail(context, 'Pending Fees', AppTheme.errorRed),
+                    onTap: () => _navigateToDetail(context, 'Pending'),
                   ),
                   StatCard(
                     title: 'Total Collections',
@@ -153,7 +154,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
-                    onTap: () => _navigateToDetail(context, 'Collections', AppTheme.successGreen),
+                    onTap: () => _navigateToDetail(context, 'Collections'),
                   ),
                 ],
               ),

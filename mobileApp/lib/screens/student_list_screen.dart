@@ -7,7 +7,8 @@ import 'student_detail_screen.dart';
 import 'package:intl/intl.dart';
 
 class StudentListScreen extends StatefulWidget {
-  const StudentListScreen({super.key});
+  final bool showOnlyPending;
+  const StudentListScreen({super.key, this.showOnlyPending = false});
 
   @override
   State<StudentListScreen> createState() => _StudentListScreenState();
@@ -18,12 +19,14 @@ class _StudentListScreenState extends State<StudentListScreen> {
   String _selectedBatch = 'All';
   String _selectedClass = 'All';
   String _selectedBoard = 'All';
+  late bool _showPendingOnly;
   bool _isLoading = false;
   List<dynamic> _allStudents = [];
 
   @override
   void initState() {
     super.initState();
+    _showPendingOnly = widget.showOnlyPending;
     _fetchStudents();
   }
 
@@ -58,11 +61,9 @@ class _StudentListScreenState extends State<StudentListScreen> {
       final matchesSearch = name.contains(_searchQuery.toLowerCase()) ||
           id.contains(_searchQuery.toLowerCase());
           
-      final matchesBatch = _selectedBatch == 'All' || academic['batchTime'] == _selectedBatch;
-      final matchesClass = _selectedClass == 'All' || academic['className'] == _selectedClass;
-      final matchesBoard = _selectedBoard == 'All' || academic['board'] == _selectedBoard;
+      final matchesPending = !_showPendingOnly || student['isPaidCurrentMonth'] == false;
       
-      return matchesSearch && matchesBatch && matchesClass && matchesBoard;
+      return matchesSearch && matchesBatch && matchesClass && matchesBoard && matchesPending;
     }).toList();
   }
 
@@ -172,7 +173,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
   }
 
   Widget _buildFilterBar() {
-    final bool hasFilters = _searchQuery.isNotEmpty || _selectedBatch != 'All' || _selectedClass != 'All' || _selectedBoard != 'All';
+    final bool hasFilters = _searchQuery.isNotEmpty || _selectedBatch != 'All' || _selectedClass != 'All' || _selectedBoard != 'All' || _showPendingOnly;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -203,6 +204,24 @@ class _StudentListScreenState extends State<StudentListScreen> {
                     items: ['All', 'GSEB', 'CBSC'],
                     onChanged: (val) => setState(() => _selectedBoard = val!),
                   ),
+                  const SizedBox(width: 8),
+                  FilterChip(
+                    label: Text(
+                      'Pending',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: _showPendingOnly ? Colors.white : AppTheme.textSecondary,
+                        fontWeight: _showPendingOnly ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                    selected: _showPendingOnly,
+                    onSelected: (val) => setState(() => _showPendingOnly = val),
+                    selectedColor: AppTheme.errorRed,
+                    checkmarkColor: Colors.white,
+                    backgroundColor: Colors.white,
+                    side: BorderSide(color: _showPendingOnly ? AppTheme.errorRed : Colors.grey.shade200),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                 ],
               ),
             ),
@@ -216,6 +235,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
                   _selectedBatch = 'All';
                   _selectedClass = 'All';
                   _selectedBoard = 'All';
+                  _showPendingOnly = false;
                 });
               },
               icon: const Icon(Icons.restart_alt_rounded, color: AppTheme.errorRed),
