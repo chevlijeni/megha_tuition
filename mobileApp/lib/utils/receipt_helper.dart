@@ -109,10 +109,11 @@ class ReceiptHelper {
       ),
     );
 
-    // Provide printing/downloading option
-    await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Receipt_${studentName}_$month.pdf',
+    // Use sharePdf instead of layoutPdf for better mobile/PWA experience
+    // This triggers the native share sheet, allowing direct sharing to WhatsApp
+    await Printing.sharePdf(
+      bytes: await pdf.save(),
+      filename: 'Receipt_${studentName}_$month.pdf',
     );
   }
 
@@ -146,12 +147,21 @@ class ReceiptHelper {
       'Hi $parentName, fee of Rs. $amount for $studentName has been collected successfully for $month $year. Regards, Megha Tuition Classes.'
     );
 
-    final url = 'https://wa.me/$cleanNumber?text=$message';
+    // Using api.whatsapp.com for better universal linking across mobile browsers and PWAs
+    final url = 'https://api.whatsapp.com/send?phone=$cleanNumber&text=$message';
 
-    if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-    } else {
-      throw 'Could not launch WhatsApp';
+    try {
+      await launchUrl(
+        Uri.parse(url),
+        mode: LaunchMode.externalApplication,
+      );
+    } catch (e) {
+      // Fallback to wa.me if the primary universal link fails
+      final fallbackUrl = 'https://wa.me/$cleanNumber?text=$message';
+      await launchUrl(
+        Uri.parse(fallbackUrl),
+        mode: LaunchMode.platformDefault,
+      );
     }
   }
 }
