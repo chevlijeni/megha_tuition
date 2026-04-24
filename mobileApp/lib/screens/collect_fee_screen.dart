@@ -392,7 +392,12 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
           decoration: BoxDecoration(
             color: isDark ? AppTheme.surfaceDark : Colors.white,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: isDark ? Colors.white10 : Colors.transparent),
+            border: Border.all(
+              color: focusNode.hasFocus 
+                ? (isDark ? AppTheme.accentBlue : AppTheme.primaryBlue) 
+                : (isDark ? Colors.white10 : Colors.grey.withOpacity(0.2)),
+              width: 1.5,
+            ),
             boxShadow: isDark ? null : [
               BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
             ],
@@ -404,10 +409,43 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
             decoration: InputDecoration(
               hintText: 'Search by Name or ID',
               hintStyle: GoogleFonts.outfit(color: isDark ? Colors.white30 : Colors.grey),
-              prefixIcon: Icon(Icons.search, color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary),
+              prefixIcon: Icon(Icons.search, color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue),
               border: InputBorder.none,
               enabledBorder: InputBorder.none,
               focusedBorder: InputBorder.none,
+            ),
+          ),
+        );
+      },
+      optionsViewBuilder: (context, onSelected, options) {
+        return Align(
+          alignment: Alignment.topLeft,
+          child: Material(
+            elevation: 8,
+            color: isDark ? AppTheme.surfaceDark : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              width: MediaQuery.of(context).size.width - 32,
+              constraints: const BoxConstraints(maxHeight: 300),
+              child: ListView.builder(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                itemCount: options.length,
+                itemBuilder: (BuildContext context, int index) {
+                  final option = options.elementAt(index);
+                  final personal = option['personalDetails'] ?? {};
+                  final academic = option['academicDetails'] ?? {};
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: AppTheme.primaryBlue.withOpacity(0.1),
+                      child: Text(personal['fullName'][0].toUpperCase(), style: const TextStyle(color: AppTheme.primaryBlue)),
+                    ),
+                    title: Text(personal['fullName'], style: TextStyle(color: isDark ? Colors.white : AppTheme.textPrimary, fontWeight: FontWeight.bold)),
+                    subtitle: Text('ID: ${option['studentId']} • ${academic['className']}', style: TextStyle(color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary)),
+                    onTap: () => onSelected(option),
+                  );
+                },
+              ),
             ),
           ),
         );
@@ -428,9 +466,12 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isPaid ? AppTheme.successGreen.withOpacity(0.05) : (isDark ? Colors.white10 : AppTheme.primaryBlue.withOpacity(0.05)),
+        color: isPaid ? AppTheme.successGreen.withOpacity(0.05) : (isDark ? AppTheme.accentBlue.withOpacity(0.05) : AppTheme.primaryBlue.withOpacity(0.05)),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isPaid ? AppTheme.successGreen.withOpacity(0.2) : (isDark ? Colors.white10 : AppTheme.primaryBlue.withOpacity(0.1))),
+        border: Border.all(
+          color: isPaid ? AppTheme.successGreen.withOpacity(0.5) : (isDark ? AppTheme.accentBlue.withOpacity(0.5) : AppTheme.primaryBlue.withOpacity(0.5)),
+          width: 2,
+        ),
       ),
       child: Row(
         children: [
