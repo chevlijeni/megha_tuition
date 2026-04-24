@@ -648,31 +648,6 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
     if (mounted) {
       setState(() => _isLoading = false);
       if (result['success']) {
-        final transaction = result['data'];
-        final student = transaction['student'] ?? {};
-        final personal = student['personalDetails'] ?? {};
-        final parent = student['parentDetails'] ?? {};
-        
-        final studentName = personal['fullName'] ?? 'Student';
-        final parentName = parent['parentName'] ?? 'Parent';
-        final mobile = parent['mobileNumber'] ?? '';
-        final amount = transaction['amount']?.toString() ?? _amountController.text;
-        final month = DateFormat('MMMM').format(DateTime.now());
-        final year = DateTime.now().year.toString();
-
-        // 1. Trigger PDF Sharing (Automatic)
-        // We do this immediately to catch the user gesture context if possible
-        ReceiptHelper.generateAndShareReceipt(
-          studentName: studentName,
-          studentId: student['studentId'] ?? '',
-          amount: amount,
-          month: month,
-          year: year,
-          paymentMode: _selectedMode,
-          parentName: parentName,
-          mobileNumber: mobile,
-        ).catchError((e) => print('SHARE ERROR: $e'));
-
         _showSuccessDialog();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['message'])));
@@ -719,32 +694,10 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
                 ),
                 const SizedBox(height: 32),
                 
+                const SizedBox(height: 32),
+                
                 // Done Button (Main Action)
-                ElevatedButton.icon(
-                  onPressed: () {
-                    final transaction = _selectedStudent; // Keep selection for a moment
-                    ReceiptHelper.generateAndShareReceipt(
-                      studentName: personal['fullName'] ?? 'Student',
-                      studentId: _selectedStudent!['studentId'],
-                      amount: amount,
-                      month: DateFormat('MMMM').format(DateTime.now()),
-                      year: DateTime.now().year.toString(),
-                      paymentMode: _selectedMode,
-                      parentName: _selectedStudent!['parentDetails']?['parentName'] ?? 'Parent',
-                      mobileNumber: _selectedStudent!['parentDetails']?['mobileNumber'] ?? '',
-                    );
-                  },
-                  icon: const Icon(Icons.download_rounded),
-                  label: const Text('Download Receipt', style: TextStyle(fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 52),
-                    backgroundColor: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextButton(
+                ElevatedButton(
                   onPressed: () {
                     Navigator.pop(context); // Close dialog
                     setState(() {
@@ -756,7 +709,13 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
                     });
                     _fetchFeesData(); // Refresh stats and list
                   },
-                  child: Text('Done', style: TextStyle(color: isDark ? Colors.white70 : AppTheme.textSecondary, fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 52),
+                    backgroundColor: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: const Text('Done', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 ),
               ],
             ),
