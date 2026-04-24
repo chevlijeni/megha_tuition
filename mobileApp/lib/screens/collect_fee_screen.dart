@@ -720,7 +720,31 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
                 const SizedBox(height: 32),
                 
                 // Done Button (Main Action)
-                ElevatedButton(
+                ElevatedButton.icon(
+                  onPressed: () {
+                    final transaction = _selectedStudent; // Keep selection for a moment
+                    ReceiptHelper.generateAndShareReceipt(
+                      studentName: personal['fullName'] ?? 'Student',
+                      studentId: _selectedStudent!['studentId'],
+                      amount: amount,
+                      month: DateFormat('MMMM').format(DateTime.now()),
+                      year: DateTime.now().year.toString(),
+                      paymentMode: _selectedMode,
+                      parentName: _selectedStudent!['parentDetails']?['parentName'] ?? 'Parent',
+                      mobileNumber: _selectedStudent!['parentDetails']?['mobileNumber'] ?? '',
+                    );
+                  },
+                  icon: const Icon(Icons.download_rounded),
+                  label: const Text('Download Receipt', style: TextStyle(fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 52),
+                    backgroundColor: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
                   onPressed: () {
                     Navigator.pop(context); // Close dialog
                     setState(() {
@@ -732,13 +756,7 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
                     });
                     _fetchFeesData(); // Refresh stats and list
                   },
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 52),
-                    backgroundColor: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  ),
-                  child: const Text('Done', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  child: Text('Done', style: TextStyle(color: isDark ? Colors.white70 : AppTheme.textSecondary, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
