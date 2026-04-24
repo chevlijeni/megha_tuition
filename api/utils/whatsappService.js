@@ -15,12 +15,19 @@ class WhatsAppService {
 
     console.log(`[WhatsApp] Sending confirmation to ${mobileNumber} via UltraMsg...`);
     
-    // Format mobile for WhatsApp (ensure country code +91)
+    // Format mobile for WhatsApp (ensure country code and + prefix)
     let cleanNumber = mobileNumber.replace(/[^0-9]/g, '');
     if (cleanNumber.length === 10) {
       cleanNumber = '91' + cleanNumber;
     }
+    
+    // UltraMsg/WhatsApp APIs usually work best with the + prefix
+    if (!cleanNumber.startsWith('+')) {
+      cleanNumber = '+' + cleanNumber;
+    }
 
+    console.log(`[WhatsApp] 🚀 Attempting to send to: ${cleanNumber}`);
+    
     const message = `Hi ${parentName}, fee of Rs. ${amount} for ${studentName} has been collected successfully for ${month} ${year}. Regards, Megha Tuition Classes.`;
 
     try {
@@ -31,15 +38,17 @@ class WhatsAppService {
         priority: 10
       });
 
-      if (response.data && response.data.sent === 'true') {
-        console.log(`[WhatsApp] Message sent successfully (ID: ${response.data.id})`);
+      console.log(`[WhatsApp] ✅ Response Received:`, JSON.stringify(response.data));
+
+      if (response.data && (response.data.sent === 'true' || response.data.sent === true)) {
+        console.log(`[WhatsApp] 📬 Message sent successfully (ID: ${response.data.id})`);
       } else {
-        console.warn('[WhatsApp] API accepted message but return status not "sent":', response.data);
+        console.warn('[WhatsApp] ⚠️ API accepted message but return status not "sent":', response.data);
       }
       
       return response.data;
     } catch (error) {
-      console.error('[WhatsApp] API Error:', error.response ? error.response.data : error.message);
+      console.error('[WhatsApp] ❌ API Error:', error.response ? JSON.stringify(error.response.data) : error.message);
       throw error;
     }
   }

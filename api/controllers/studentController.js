@@ -3,6 +3,7 @@ const Student = require('../models/Student');
 const Payment = require('../models/Payment');
 const catchAsync = require('../utils/catchAsync');
 const { sendResponse } = require('../utils/responseHelper');
+const WhatsAppService = require('../utils/whatsappService');
 
 // @desc    Sync all home data (stats, students, payments)
 // @route   GET /api/v1/students/sync
@@ -310,5 +311,22 @@ exports.collectPayment = catchAsync(async (req, res, next) => {
         receiptNumber: referenceNumber || `RCPT-${Date.now()}`
     });
 
-    sendResponse(res, 201, 'Payment collected successfully', payment);
+    // Populate student details for receipt generation and WhatsApp automation
+    const populatedPayment = await Payment.findById(payment._id)
+        .populate('student', 'personalDetails parentDetails studentId feeDetails academicDetails');
+
+    // Trigger WhatsApp notification from backend
+    if (populatedPayment.student && populatedPayment.student.parentDetails) {
+        const studentObj = populatedPayment.student;
+        WhatsAppService.sendFeeConfirmation({
+            parentName: studentObj.parentDetails.parentName,
+            mobileNumber: studentObj.parentDetails.mobileNumber,
+            studentName: studentObj.personalDetails.fullName,
+            amount: populatedPayment.amount,
+            month: new Date().toLocaleString('default', { month: 'long' }),
+            year: new Date().getFullYear().toString()
+        }).catch(err => console.error('Auto-WhatsApp Error:', err));
+    }
+
+    sendResponse(res, 201, 'Payment collected successfully', populatedPayment);
 });
