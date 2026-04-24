@@ -74,7 +74,9 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
+      backgroundColor: isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight,
       appBar: AppBar(
         toolbarHeight: 70,
         flexibleSpace: Container(
@@ -95,7 +97,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                 hintText: 'Search by Name, Mobile, Parent or Class...',
                 prefixIcon: const Icon(Icons.search),
                 contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                fillColor: Colors.white,
+                fillColor: isDark ? Colors.white10 : Colors.white,
                 filled: true,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -140,6 +142,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
   }
 
   Widget _buildTransactionItem(BuildContext context, dynamic payment) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final student = payment['student'] ?? {};
     final personal = student['personalDetails'] ?? {};
     final academic = student['academicDetails'] ?? {};
@@ -171,15 +174,15 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? AppTheme.surfaceDark : Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
         ),
         child: Row(
           children: [
             CircleAvatar(
-              backgroundColor: AppTheme.primaryBlue.withOpacity(0.1),
-              child: Text(name.isNotEmpty ? name[0] : '?', style: const TextStyle(color: AppTheme.primaryBlue)),
+              backgroundColor: isDark ? Colors.white10 : AppTheme.primaryBlue.withOpacity(0.1),
+              child: Text(name.isNotEmpty ? name[0] : '?', style: TextStyle(color: isDark ? Colors.white : AppTheme.primaryBlue)),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -188,9 +191,12 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                 children: [
                   Text(
                     name,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isDark ? Colors.white : AppTheme.textPrimary),
                   ),
-                  Text('Class ${academic['className'] ?? ''} • $dateStr', style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
+                  Text(
+                    'Class ${academic['className'] ?? ''} • $dateStr', 
+                    style: TextStyle(color: isDark ? Colors.white70 : AppTheme.textSecondary, fontSize: 13),
+                  ),
                 ],
               ),
             ),
@@ -199,7 +205,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
               children: [
                 Text(
                   '₹$amount',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isDark ? Colors.white : AppTheme.textPrimary),
                 ),
                 StatusChip(label: payment['paymentMethod'] ?? 'Paid', color: AppTheme.successGreen),
               ],

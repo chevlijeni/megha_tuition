@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import '../utils/api_service.dart';
 import '../widgets/status_chip.dart';
@@ -49,14 +50,15 @@ class _StatsDetailScreenState extends State<StatsDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: AppTheme.backgroundLight,
+      backgroundColor: isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight,
       appBar: AppBar(
         toolbarHeight: 70,
         flexibleSpace: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [widget.themeColor, widget.themeColor.withOpacity(0.8)],
+              colors: isDark ? [widget.themeColor.withOpacity(0.8), widget.themeColor.withOpacity(0.6)] : [widget.themeColor, widget.themeColor.withOpacity(0.8)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -64,7 +66,7 @@ class _StatsDetailScreenState extends State<StatsDetailScreen> {
         ),
         title: Text(
           widget.title,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -112,31 +114,37 @@ class _StatsDetailScreenState extends State<StatsDetailScreen> {
     final rollId = student['studentId'] ?? 'N/A';
     final amount = fee['feeAmount'] ?? 0;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.transparent),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: isDark ? Colors.black.withOpacity(0.2) : Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
-          backgroundColor: widget.themeColor.withOpacity(0.1),
+          backgroundColor: isDark ? widget.themeColor.withOpacity(0.2) : widget.themeColor.withOpacity(0.1),
           child: Text(
             name.isNotEmpty ? name[0] : '?',
-            style: TextStyle(color: widget.themeColor, fontWeight: FontWeight.bold),
+            style: TextStyle(color: isDark ? Colors.white : widget.themeColor, fontWeight: FontWeight.bold),
           ),
         ),
         title: Text(
           name,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          style: isDark ? GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white) : const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         subtitle: Text(
-          '${academic['className'] ?? ''} • ${academic['board'] ?? ''} • ${academic['batchTime'] ?? ''}',
-          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+          '${academic['className'] ?? ''} • ${academic['batchTime'] ?? ''}',
+          style: isDark ? GoogleFonts.outfit(color: Colors.white60, fontSize: 12) : const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
         ),
         trailing: SizedBox(
           height: 48,
@@ -146,7 +154,7 @@ class _StatsDetailScreenState extends State<StatsDetailScreen> {
             children: [
               Text(
                 '₹$amount',
-                style: TextStyle(fontWeight: FontWeight.bold, color: widget.themeColor, fontSize: 13),
+                style: isDark ? GoogleFonts.outfit(fontWeight: FontWeight.w900, color: AppTheme.accentBlue, fontSize: 15) : TextStyle(fontWeight: FontWeight.bold, color: widget.themeColor, fontSize: 13),
               ),
               StatusChip(
                 label: student['isPaidCurrentMonth'] == true ? 'Paid' : 'Pending',
@@ -178,32 +186,38 @@ class _StatsDetailScreenState extends State<StatsDetailScreen> {
     final amount = payment['amount'] ?? 0;
     final date = DateTime.parse(payment['paymentDate']).toLocal();
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.transparent),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: isDark ? Colors.black.withOpacity(0.2) : Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
-          backgroundColor: AppTheme.successGreen.withOpacity(0.1),
+          backgroundColor: isDark ? AppTheme.successGreen.withOpacity(0.2) : AppTheme.successGreen.withOpacity(0.1),
           child: const Icon(Icons.receipt_long_rounded, color: AppTheme.successGreen, size: 20),
         ),
         title: Text(
           name,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          style: isDark ? GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white) : const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         subtitle: Text(
           '${DateFormat('dd MMM').format(date)} • ${payment['paymentMethod'] ?? 'Cash'}',
-          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+          style: isDark ? GoogleFonts.outfit(color: Colors.white60, fontSize: 13) : const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
         ),
         trailing: Text(
           '₹$amount',
-          style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.successGreen, fontSize: 16),
+          style: isDark ? GoogleFonts.outfit(fontWeight: FontWeight.w900, color: AppTheme.successGreen, fontSize: 16) : const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.successGreen, fontSize: 16),
         ),
         onTap: () {
           if (student['_id'] != null) {

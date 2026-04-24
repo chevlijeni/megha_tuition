@@ -142,6 +142,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildProfileHeader() {
+    final isDark = ThemeManager.instance.isDarkMode;
     final userName = _userProfile?['username'] ?? 'User';
     final userRole = _userProfile?['role'] ?? 'Admin';
     final email = _userProfile?['email'] ?? '$userName@mtclasses.com';
@@ -165,11 +166,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               Text(
                 userName.toUpperCase(),
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black),
               ),
               Text(
                 '$userRole • $email',
-                style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+                style: TextStyle(color: isDark ? Colors.white70 : AppTheme.textSecondary, fontSize: 13),
               ),
             ],
           ),
@@ -179,6 +180,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildSettingsSection(String title, List<Widget> items) {
+    final isDark = ThemeManager.instance.isDarkMode;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -186,17 +188,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Text(
             title,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue),
           ),
         ),
         const SizedBox(height: 12),
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+              BoxShadow(color: Colors.black.withOpacity(isDark ? 0.2 : 0.03), blurRadius: 10, offset: const Offset(0, 4)),
             ],
           ),
           child: Column(children: items),
@@ -206,11 +208,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildSettingItem(IconData icon, String title, String subtitle, {VoidCallback? onTap}) {
+    final isDark = ThemeManager.instance.isDarkMode;
     return ListTile(
-      leading: Icon(icon, color: AppTheme.textSecondary),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
-      subtitle: Text(subtitle, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
-      trailing: const Icon(Icons.chevron_right, size: 20, color: AppTheme.textSecondary),
+      leading: Icon(icon, color: isDark ? Colors.white70 : AppTheme.textSecondary),
+      title: Text(title, style: TextStyle(fontWeight: FontWeight.w500, color: isDark ? Colors.white : Colors.black87)),
+      subtitle: Text(subtitle, style: TextStyle(fontSize: 12, color: isDark ? Colors.white54 : AppTheme.textSecondary)),
+      trailing: Icon(Icons.chevron_right, size: 20, color: isDark ? Colors.white24 : AppTheme.textSecondary),
       onTap: onTap ?? () {},
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/status_chip.dart';
@@ -137,8 +138,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     title: 'Total Students',
                     value: _stats?['totalStudents']?.toString() ?? '...',
                     icon: Icons.people_rounded,
-                    iconColor: AppTheme.primaryBlue,
-                    gradient: const LinearGradient(
+                    iconColor: AppTheme.accentBlue,
+                    gradient: isDark ? null : const LinearGradient(
                       colors: [Color(0xFF194464), Color(0xFFCEDDE8)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -150,7 +151,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     value: '₹${NumberFormat('#,##,000').format(_stats?['totalFees'] ?? 0)}',
                     icon: Icons.assignment_rounded,
                     iconColor: AppTheme.warningYellow,
-                    gradient: const LinearGradient(
+                    gradient: isDark ? null : const LinearGradient(
                       colors: [Color(0xFF194464), Color(0xFFCEDDE8)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -162,7 +163,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     value: '₹${NumberFormat('#,##,000').format(_stats?['pendingFees'] ?? 0)}',
                     icon: Icons.account_balance_wallet_rounded,
                     iconColor: AppTheme.errorRed,
-                    gradient: const LinearGradient(
+                    gradient: isDark ? null : const LinearGradient(
                       colors: [Color(0xFF194464), Color(0xFFCEDDE8)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -174,7 +175,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     value: '₹${NumberFormat('#,##,000').format(_stats?['totalCollection'] ?? 0)}',
                     icon: Icons.payments_rounded,
                     iconColor: AppTheme.successGreen,
-                    gradient: const LinearGradient(
+                    gradient: isDark ? null : const LinearGradient(
                       colors: [Color(0xFF194464), Color(0xFFCEDDE8)],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -184,18 +185,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ],
               ),
             
-            const SizedBox(height: 32),
+            SizedBox(height: 32),
 
             // Recent Transactions (Student Details)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Recent Transactions',
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w900,
-                    color: AppTheme.textPrimary,
+                    color: isDark ? Colors.white : AppTheme.textPrimary,
                     letterSpacing: -0.5,
                   ),
                 ),
@@ -203,11 +204,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   onPressed: () {
                     Navigator.push(context, MaterialPageRoute(builder: (context) => const TransactionListScreen()));
                   },
-                  child: const Text('View All', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryBlue)),
+                  child: Text('View All', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.primaryBlue)),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             _isLoading 
               ? const Center(child: Padding(
                   padding: EdgeInsets.all(32.0),
@@ -232,22 +233,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
     ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const AddStudentWizard()));
-        },
-        backgroundColor: AppTheme.primaryBlue,
-        foregroundColor: Colors.white,
-        elevation: 6,
-        icon: const Icon(Icons.person_add_rounded),
-        label: const Text('ADD STUDENT', style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 0.5)),
-      ),
+      floatingActionButton: isDark 
+        ? Container(
+            height: 60,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF1e3c72), Color(0xFF2a5298)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(30),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primaryBlue.withOpacity(0.4),
+                  blurRadius: 15,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: FloatingActionButton.extended(
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const AddStudentWizard()));
+              },
+              backgroundColor: Colors.transparent,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              highlightElevation: 0,
+              icon: const Icon(Icons.person_add_rounded, size: 24),
+              label: Text(
+                'ADD STUDENT', 
+                style: GoogleFonts.outfit(fontWeight: FontWeight.w800, letterSpacing: 1.0, fontSize: 13),
+              ),
+            ),
+          )
+        : FloatingActionButton.extended(
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const AddStudentWizard()));
+            },
+            backgroundColor: AppTheme.primaryBlue,
+            foregroundColor: Colors.white,
+            elevation: 6,
+            icon: const Icon(Icons.person_add_rounded),
+            label: const Text('ADD STUDENT', style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+          ),
         );
       },
     );
   }
 
   Widget _buildTransactionItem(BuildContext context, dynamic payment) {
+    final isDark = ThemeManager.instance.isDarkMode;
     final student = payment['student'] ?? {};
     final personal = student['personalDetails'] ?? {};
     final academic = student['academicDetails'] ?? {};
@@ -271,12 +306,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.grey.withOpacity(0.05)),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.grey.withOpacity(0.05)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -308,13 +343,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: AppTheme.backgroundLight,
+                    color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.primaryBlue.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Center(
                     child: Text(
-                      name.isNotEmpty ? name[0] : '?', 
-                      style: const TextStyle(color: AppTheme.primaryBlue, fontWeight: FontWeight.bold, fontSize: 18),
+                      name.isNotEmpty ? name[0].toUpperCase() : '?', 
+                      style: TextStyle(color: isDark ? Colors.white : AppTheme.primaryBlue, fontWeight: FontWeight.bold, fontSize: 18),
                     ),
                   ),
                 ),
@@ -326,12 +361,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     children: [
                       Text(
                         name, 
-                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppTheme.textPrimary),
+                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: isDark ? Colors.white : AppTheme.textPrimary),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         '${academic['className'] ?? ''} • ${timeStr}', 
-                        style: TextStyle(color: AppTheme.textSecondary.withOpacity(0.8), fontSize: 13),
+                        style: TextStyle(color: (isDark ? Colors.white70 : AppTheme.textSecondary).withOpacity(0.8), fontSize: 13),
                       ),
                     ],
                   ),
@@ -342,7 +377,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   children: [
                     Text(
                       '₹${NumberFormat('#,###').format(amount)}', 
-                      style: const TextStyle(fontWeight: FontWeight.w900, color: AppTheme.textPrimary, fontSize: 15),
+                      style: TextStyle(fontWeight: FontWeight.w900, color: isDark ? Colors.white : AppTheme.textPrimary, fontSize: 15),
                     ),
                     const SizedBox(height: 6),
                     StatusChip(

@@ -40,10 +40,10 @@ class AppTheme {
 
   static LinearGradient getBackgroundGradient(bool isDark) {
     return LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
       colors: isDark 
-        ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+        ? [backgroundDark, backgroundDark]
         : [primaryBlue, const Color(0xFF1A324D)],
     );
   }
@@ -101,8 +101,29 @@ class AppTheme {
         headlineLarge: GoogleFonts.outfit(color: primaryTxt, fontWeight: FontWeight.bold, fontSize: 32),
         headlineMedium: GoogleFonts.outfit(color: primaryTxt, fontWeight: FontWeight.bold, fontSize: 26),
         titleLarge: GoogleFonts.outfit(color: primaryTxt, fontWeight: FontWeight.w600, fontSize: 20),
+        titleMedium: GoogleFonts.outfit(color: primaryTxt, fontWeight: FontWeight.w600, fontSize: 18),
         bodyLarge: GoogleFonts.outfit(color: primaryTxt, fontSize: 16),
         bodyMedium: GoogleFonts.outfit(color: secondaryTxt, fontSize: 14),
+        labelLarge: GoogleFonts.outfit(color: secondaryTxt, fontSize: 12),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryBlue,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          minimumSize: const Size(double.infinity, 52),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          textStyle: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: isDark ? Colors.white : primaryBlue,
+          side: BorderSide(color: isDark ? Colors.white24 : primaryBlue.withOpacity(0.2)),
+          minimumSize: const Size(double.infinity, 52),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          textStyle: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
       ),
     );
   }

@@ -102,7 +102,10 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
     final fee = _studentData!['feeDetails'] ?? {};
     final parent = _studentData!['parentDetails'] ?? {};
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
+      backgroundColor: isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight,
       appBar: AppBar(
         toolbarHeight: 70,
         flexibleSpace: Container(
@@ -179,7 +182,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                   icon: const Icon(Icons.history_rounded, size: 18),
                   label: const Text('View History', style: TextStyle(fontSize: 12)),
                   style: TextButton.styleFrom(
-                    foregroundColor: AppTheme.primaryBlue,
+                    foregroundColor: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue,
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                   ),
                 ),
@@ -212,18 +215,19 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
   }
 
   Widget _buildProfileHeader() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
-      color: AppTheme.primaryBlue,
+      color: isDark ? AppTheme.surfaceDark : AppTheme.primaryBlue,
       padding: const EdgeInsets.symmetric(vertical: 32),
       child: Column(
         children: [
           CircleAvatar(
             radius: 50,
-            backgroundColor: Colors.white,
+            backgroundColor: isDark ? Colors.white10 : Colors.white,
             child: Text(
               widget.studentName.split(' ').map((e) => e[0]).join(''),
-              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
+              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: isDark ? Colors.white : AppTheme.primaryBlue),
             ),
           ),
           const SizedBox(height: 16),
@@ -241,13 +245,14 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
   }
 
   Widget _buildDetailSection(String title, IconData icon, Map<String, String> data, {Widget? action}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(top: 20, left: 16, right: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+          BoxShadow(color: Colors.black.withOpacity(isDark ? 0.2 : 0.05), blurRadius: 10),
         ],
       ),
       child: Column(
@@ -271,13 +276,14 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
   }
 
   Widget _buildDetailRow(String label, String value) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: AppTheme.textSecondary)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+          Text(label, style: TextStyle(color: isDark ? Colors.white70 : AppTheme.textSecondary)),
+          Text(value, style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black)),
         ],
       ),
     );

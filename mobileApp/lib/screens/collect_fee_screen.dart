@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import 'transaction_list_screen.dart';
 import '../utils/api_service.dart';
 import 'package:intl/intl.dart';
 import 'student_detail_screen.dart';
 import '../widgets/status_chip.dart';
+import '../utils/receipt_helper.dart';
 
 class CollectFeeScreen extends StatefulWidget {
   final bool isTab;
@@ -67,7 +69,9 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
+      backgroundColor: isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight,
       appBar: AppBar(
         toolbarHeight: 80,
         flexibleSpace: Container(
@@ -89,9 +93,9 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
             children: [
               _buildSummaryDashboard(),
             const SizedBox(height: 24),
-            const Text(
+            Text(
               'Search Student',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white : AppTheme.textPrimary),
             ),
             const SizedBox(height: 12),
             _buildSearchSection(),
@@ -143,49 +147,52 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
     required IconData icon,
     required Color color,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
+        color: isDark ? AppTheme.surfaceDark : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: isDark ? Colors.white.withOpacity(0.04) : Colors.transparent),
+        boxShadow: isDark ? null : [
           BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 24),
+          Icon(icon, color: color, size: 22),
           const SizedBox(height: 12),
-          Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
-          Text(label, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+          Text(value, style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.bold, color: isDark ? Colors.white : AppTheme.textPrimary)),
+          Text(label, style: GoogleFonts.outfit(fontSize: 12, color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary)),
         ],
       ),
     );
   }
 
   Widget _buildEmptyState() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(28),
             decoration: BoxDecoration(
-              color: AppTheme.primaryBlue.withOpacity(0.05),
+              color: isDark ? Colors.white.withOpacity(0.03) : AppTheme.primaryBlue.withOpacity(0.05),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.person_search_outlined, size: 64, color: AppTheme.primaryBlue.withOpacity(0.5)),
+            child: Icon(Icons.person_search_outlined, size: 64, color: isDark ? Colors.white24 : AppTheme.primaryBlue.withOpacity(0.5)),
           ),
-          const SizedBox(height: 20),
-          const Text(
+          const SizedBox(height: 24),
+          Text(
             'Ready to collect fees?',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+            style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : AppTheme.textPrimary),
           ),
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Search for a student to get started',
-            style: TextStyle(color: AppTheme.textSecondary),
+            style: GoogleFonts.outfit(color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary, fontSize: 13),
           ),
         ],
       ),
@@ -239,6 +246,7 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
   }
 
   Widget _buildTransactionItem(BuildContext context, dynamic payment) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final student = payment['student'] ?? {};
     final personal = student['personalDetails'] ?? {};
     final academic = student['academicDetails'] ?? {};
@@ -259,14 +267,15 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
       }
     }
 
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? AppTheme.surfaceDark : Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.grey.withOpacity(0.05)),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.grey.withOpacity(0.05)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -298,13 +307,13 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: AppTheme.backgroundLight,
+                    color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.primaryBlue.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Center(
                     child: Text(
-                      name.isNotEmpty ? name[0] : '?', 
-                      style: const TextStyle(color: AppTheme.primaryBlue, fontWeight: FontWeight.bold, fontSize: 18),
+                      name.isNotEmpty ? name[0].toUpperCase() : '?', 
+                      style: TextStyle(color: isDark ? Colors.white : AppTheme.primaryBlue, fontWeight: FontWeight.bold, fontSize: 18),
                     ),
                   ),
                 ),
@@ -316,7 +325,7 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
                     children: [
                       Text(
                         name, 
-                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: AppTheme.textPrimary),
+                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: isDark ? Colors.white : AppTheme.textPrimary),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -332,7 +341,7 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
                   children: [
                     Text(
                       '₹${NumberFormat('#,###').format(amount)}', 
-                      style: const TextStyle(fontWeight: FontWeight.w900, color: AppTheme.textPrimary, fontSize: 15),
+                      style: TextStyle(fontWeight: FontWeight.w900, color: isDark ? Colors.white : AppTheme.textPrimary, fontSize: 15),
                     ),
                     const SizedBox(height: 6),
                     StatusChip(
@@ -350,17 +359,22 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
   }
 
   Widget _buildSearchSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Autocomplete<Map<String, dynamic>>(
       textEditingController: _searchController,
       focusNode: _searchFocusNode,
-      displayStringForOption: (option) => option['personalDetails']['fullName']!,
+      displayStringForOption: (option) {
+        final personal = option['personalDetails'] ?? {};
+        return personal['fullName'] ?? '';
+      },
       optionsBuilder: (TextEditingValue textEditingValue) {
         if (textEditingValue.text == '') {
           return const Iterable<Map<String, dynamic>>.empty();
         }
         return _allStudents.where((student) {
-          final name = student['personalDetails']['fullName']!.toString().toLowerCase();
-          final id = student['studentId']!.toString().toLowerCase();
+          final personal = student['personalDetails'] ?? {};
+          final name = personal['fullName']?.toString().toLowerCase() ?? '';
+          final id = student['studentId']?.toString().toLowerCase() ?? '';
           final query = textEditingValue.text.toLowerCase();
           return name.contains(query) || id.contains(query);
         }).cast<Map<String, dynamic>>();
@@ -368,7 +382,7 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
       onSelected: (selection) {
         setState(() {
           _selectedStudent = selection;
-          final fee = selection['feeDetails']['feeAmount'] ?? 0;
+          final fee = selection['feeDetails']?['feeAmount'] ?? 0;
           _amountController.text = fee.toString();
         });
       },
@@ -376,18 +390,21 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
+            color: isDark ? AppTheme.surfaceDark : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: isDark ? Colors.white10 : Colors.transparent),
+            boxShadow: isDark ? null : [
               BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
             ],
           ),
           child: TextField(
             controller: controller,
             focusNode: focusNode,
-            decoration: const InputDecoration(
+            style: GoogleFonts.outfit(color: isDark ? Colors.white : Colors.black),
+            decoration: InputDecoration(
               hintText: 'Search by Name or ID',
-              prefixIcon: Icon(Icons.search, color: AppTheme.textSecondary),
+              hintStyle: GoogleFonts.outfit(color: isDark ? Colors.white30 : Colors.grey),
+              prefixIcon: Icon(Icons.search, color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary),
               border: InputBorder.none,
               enabledBorder: InputBorder.none,
               focusedBorder: InputBorder.none,
@@ -399,6 +416,7 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
   }
 
   Widget _buildSelectedStudentCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final personal = _selectedStudent!['personalDetails'] ?? {};
     final academic = _selectedStudent!['academicDetails'] ?? {};
     final name = personal['fullName'] ?? 'Unknown';
@@ -410,25 +428,37 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isPaid ? AppTheme.successGreen.withOpacity(0.05) : AppTheme.primaryBlue.withOpacity(0.05),
+        color: isPaid ? AppTheme.successGreen.withOpacity(0.05) : (isDark ? Colors.white10 : AppTheme.primaryBlue.withOpacity(0.05)),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isPaid ? AppTheme.successGreen.withOpacity(0.2) : AppTheme.primaryBlue.withOpacity(0.1)),
+        border: Border.all(color: isPaid ? AppTheme.successGreen.withOpacity(0.2) : (isDark ? Colors.white10 : AppTheme.primaryBlue.withOpacity(0.1))),
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            backgroundColor: isPaid ? AppTheme.successGreen : AppTheme.primaryBlue,
-            child: Icon(isPaid ? Icons.check : Icons.person, color: Colors.white),
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: isPaid ? AppTheme.successGreen : (isDark ? Colors.white10 : AppTheme.primaryBlue.withOpacity(0.1)),
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: isPaid 
+                ? const Icon(Icons.check, color: Colors.white, size: 24)
+                : Text(
+                    name.isNotEmpty ? name[0].toUpperCase() : '?',
+                    style: TextStyle(color: isDark ? Colors.white : AppTheme.primaryBlue, fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Text(name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isDark ? Colors.white : Colors.black)),
                 Text(
                   'ID: ${_selectedStudent!['studentId']} • ${academic['className']} • Fee: ₹$feeAmount',
-                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+                  style: TextStyle(color: isDark ? Colors.white70 : AppTheme.textSecondary, fontSize: 14),
                 ),
                 if (isPaid && paymentDateStr != null) ...[
                   const SizedBox(height: 8),
@@ -462,6 +492,9 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
               // Clear the autocomplete search field
               _searchController.clear();
             },
+            style: TextButton.styleFrom(
+              foregroundColor: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue,
+            ),
             child: const Text('Change'),
           ),
         ],
@@ -470,14 +503,15 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
   }
 
   Widget _buildPaymentForm() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bool isPaid = _selectedStudent!['isPaidCurrentMonth'] ?? false;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Payment Details',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white : AppTheme.textPrimary),
         ),
         const SizedBox(height: 16),
         TextField(
@@ -504,10 +538,23 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
                 onSelected: isPaid ? null : (val) {
                   setState(() => _selectedMode = mode);
                 },
-                selectedColor: AppTheme.primaryBlue.withOpacity(0.2),
+                selectedColor: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue,
+                backgroundColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[200],
+                checkmarkColor: Colors.white,
                 labelStyle: TextStyle(
-                  color: isSelected ? AppTheme.primaryBlue : AppTheme.textSecondary,
+                  color: isSelected 
+                    ? Colors.white 
+                    : (isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary),
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  fontSize: 13,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(
+                    color: isSelected 
+                      ? (isDark ? AppTheme.accentBlue : AppTheme.primaryBlue) 
+                      : Colors.transparent,
+                  ),
                 ),
               ),
             );
@@ -527,11 +574,14 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
           onPressed: (_isLoading || isPaid) ? null : () => _handleCollectPayment(),
           icon: _isLoading 
             ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-            : Icon(isPaid ? Icons.check_circle_outline : Icons.account_balance_wallet_outlined),
+            : Icon(isPaid ? Icons.check_circle_rounded : Icons.account_balance_wallet_rounded),
           label: Text(_isLoading ? 'Processing...' : (isPaid ? 'Already Collected' : 'Collect Payment')),
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 16),
-            backgroundColor: isPaid ? Colors.grey[400] : null,
+            backgroundColor: isPaid ? (isDark ? Colors.white10 : Colors.grey[200]) : AppTheme.primaryBlue,
+            foregroundColor: isPaid ? (isDark ? Colors.white30 : Colors.grey[400]) : Colors.white,
+            disabledBackgroundColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[200],
+            disabledForegroundColor: isDark ? Colors.white24 : Colors.grey[400],
           ),
         ),
       ],
@@ -565,12 +615,21 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
   }
 
   void _showSuccessDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final personal = _selectedStudent!['personalDetails'] ?? {};
+    final parent = _selectedStudent!['parentDetails'] ?? {};
+    final studentName = personal['fullName'] ?? 'Student';
+    final amount = _amountController.text;
+    final month = DateFormat('MMMM').format(DateTime.now());
+    final year = DateTime.now().year.toString();
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
         return Dialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: isDark ? AppTheme.surfaceDark : Colors.white,
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
@@ -585,31 +644,72 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
                   child: const Icon(Icons.check, size: 48, color: Colors.white),
                 ),
                 const SizedBox(height: 24),
-                const Text(
+                Text(
                   'Payment Successful!',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : AppTheme.textPrimary),
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Collected ₹${_amountController.text} from ${_selectedStudent!['personalDetails']['fullName']}',
+                  'Collected ₹$amount from $studentName',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: AppTheme.textSecondary),
+                  style: TextStyle(color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary),
                 ),
                 const SizedBox(height: 32),
-                ElevatedButton(
+                
+                // Action Buttons
+                ElevatedButton.icon(
+                  onPressed: () {
+                    ReceiptHelper.generateAndShareReceipt(
+                      studentName: studentName,
+                      studentId: _selectedStudent!['studentId'],
+                      amount: amount,
+                      month: month,
+                      year: year,
+                      paymentMode: _selectedMode,
+                      parentName: parent['parentName'] ?? 'Parent',
+                      mobileNumber: parent['mobileNumber'] ?? '',
+                    );
+                  },
+                  icon: const Icon(Icons.picture_as_pdf_rounded),
+                  label: const Text('View/Print Receipt'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                    backgroundColor: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    ReceiptHelper.sendWhatsAppMessage(
+                      parentName: parent['parentName'] ?? 'Parent',
+                      mobileNumber: parent['mobileNumber'] ?? '',
+                      studentName: studentName,
+                      amount: amount,
+                      month: month,
+                      year: year,
+                    );
+                  },
+                  icon: const Icon(Icons.message_rounded, color: AppTheme.successGreen),
+                  label: const Text('Send WhatsApp Notification'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                    side: const BorderSide(color: AppTheme.successGreen),
+                    foregroundColor: AppTheme.successGreen,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                TextButton(
                   onPressed: () {
                     Navigator.pop(context); // Close dialog
                     setState(() {
                       _selectedStudent = null;
                       _amountController.clear();
+                      _referenceController.clear();
                     });
                     _fetchFeesData(); // Refresh stats and list
                   },
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 45),
-                    backgroundColor: AppTheme.primaryBlue,
-                  ),
-                  child: const Text('Done'),
+                  child: Text('Done', style: TextStyle(color: isDark ? Colors.white70 : AppTheme.textSecondary)),
                 ),
               ],
             ),

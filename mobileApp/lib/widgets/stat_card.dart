@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 
 class StatCard extends StatelessWidget {
@@ -18,28 +19,34 @@ class StatCard extends StatelessWidget {
     this.gradient,
     this.onTap,
   });
-
   @override
   Widget build(BuildContext context) {
     final bool isGradient = gradient != null;
-    final Color textColor = isGradient ? Colors.white : AppTheme.textPrimary;
-    final Color subTextColor = isGradient ? Colors.white.withOpacity(0.8) : AppTheme.textSecondary;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    final Color textColor = isGradient ? Colors.white : (isDark ? Colors.white : AppTheme.textPrimary);
+    final Color subTextColor = isGradient ? Colors.white.withOpacity(0.8) : (isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary);
 
     return Container(
       decoration: BoxDecoration(
-        color: isGradient ? null : AppTheme.surfaceWhite,
+        color: isGradient ? null : (isDark ? AppTheme.surfaceDark : AppTheme.surfaceWhite),
         gradient: gradient,
         borderRadius: BorderRadius.circular(24),
-        border: isGradient ? null : Border.all(color: Colors.grey.withOpacity(0.08), width: 1),
-        boxShadow: [
+        border: Border.all(
+          color: isGradient 
+            ? Colors.white.withOpacity(0.1) 
+            : (isDark ? Colors.white.withOpacity(0.04) : Colors.grey.withOpacity(0.08)), 
+          width: 1
+        ),
+        boxShadow: isGradient || !isDark ? [
           BoxShadow(
             color: isGradient 
-             ? (gradient!.colors.first).withOpacity(0.3)
+             ? (gradient!.colors.first).withOpacity(isDark ? 0.4 : 0.3)
              : AppTheme.primaryBlue.withOpacity(0.04),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
-        ],
+        ] : null,
       ),
       child: InkWell(
         onTap: onTap,
@@ -50,29 +57,31 @@ class StatCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: isGradient ? Colors.white.withOpacity(0.2) : iconColor.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(14),
+                  color: isGradient 
+                    ? Colors.white.withOpacity(0.2) 
+                    : (isDark ? iconColor.withOpacity(0.1) : iconColor.withOpacity(0.12)),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: isGradient ? Colors.white : iconColor, size: 22),
+                child: Icon(icon, color: isGradient ? Colors.white : iconColor, size: 20),
               ),
               const Spacer(),
               Text(
                 value,
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                style: GoogleFonts.outfit(
                   fontSize: 22,
                   color: textColor,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 2),
               Text(
                 title,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                style: GoogleFonts.outfit(
                   fontWeight: FontWeight.w500,
                   color: subTextColor,
-                  letterSpacing: 0.2,
+                  fontSize: 12,
                 ),
               ),
             ],

@@ -79,8 +79,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: AppTheme.backgroundLight,
+      backgroundColor: isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight,
       appBar: AppBar(
         toolbarHeight: 70,
         flexibleSpace: Container(decoration: AppTheme.headerDecoration),
@@ -115,6 +116,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildAvatarSection() {
     final initials = (_profile?['username'] ?? 'U').substring(0, 1).toUpperCase();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
       child: Column(
         children: [
@@ -122,21 +124,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
             width: 100,
             height: 100,
             decoration: BoxDecoration(
-              color: AppTheme.primaryBlue.withOpacity(0.1),
+              color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.primaryBlue.withOpacity(0.1),
               shape: BoxShape.circle,
-              border: Border.all(color: AppTheme.primaryBlue, width: 2),
+              border: Border.all(color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue, width: 2),
             ),
             child: Center(
               child: Text(
                 initials,
-                style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue),
+                style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: isDark ? Colors.white : AppTheme.primaryBlue),
               ),
             ),
           ),
           const SizedBox(height: 16),
           Text(
             _profile?['role']?.toUpperCase() ?? 'ADMIN',
-            style: const TextStyle(letterSpacing: 1.2, fontWeight: FontWeight.w800, color: AppTheme.primaryBlue, fontSize: 12),
+            style: TextStyle(
+              letterSpacing: 1.2, 
+              fontWeight: FontWeight.w800, 
+              color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue, 
+              fontSize: 12
+            ),
           ),
         ],
       ),
@@ -167,16 +174,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildTextField(String label, TextEditingController controller, IconData icon) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return TextField(
       controller: controller,
+      style: TextStyle(color: isDark ? Colors.white : AppTheme.textPrimary),
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, color: AppTheme.primaryBlue),
+        labelStyle: TextStyle(color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary),
+        prefixIcon: Icon(icon, color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderSide: BorderSide(color: isDark ? Colors.white10 : Colors.grey.shade300),
         ),
+        filled: isDark,
+        fillColor: isDark ? Colors.white.withOpacity(0.03) : null,
       ),
     );
   }
@@ -206,13 +218,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildInfoItem(IconData icon, String label, String value) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? AppTheme.surfaceDark : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10)],
+        border: Border.all(color: isDark ? Colors.white.withOpacity(0.04) : Colors.transparent),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.02), 
+            blurRadius: 10
+          )
+        ],
       ),
       child: Row(
         children: [
@@ -221,9 +240,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+              Text(
+                label, 
+                style: TextStyle(
+                  fontSize: 12, 
+                  color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary
+                )
+              ),
               const SizedBox(height: 4),
-              Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+              Text(
+                value, 
+                style: TextStyle(
+                  fontSize: 15, 
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : AppTheme.textPrimary,
+                )
+              ),
             ],
           ),
         ],

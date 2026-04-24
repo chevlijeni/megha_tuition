@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import '../utils/api_service.dart';
 import '../widgets/status_chip.dart';
@@ -48,21 +49,22 @@ class _StudentFeesHistoryScreenState extends State<StudentFeesHistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: AppTheme.backgroundLight,
+      backgroundColor: isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight,
       appBar: AppBar(
         toolbarHeight: 70,
-        flexibleSpace: Container(decoration: AppTheme.headerDecoration),
+        flexibleSpace: Container(decoration: AppTheme.headerDecorationWithMode(isDark)),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               'Fee History',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+              style: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
             ),
             Text(
               widget.studentName,
-              style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12),
+              style: GoogleFonts.outfit(color: Colors.white.withOpacity(0.8), fontSize: 12),
             ),
           ],
         ),
@@ -110,21 +112,24 @@ class _StudentFeesHistoryScreenState extends State<StudentFeesHistoryScreen> {
     final method = payment['paymentMethod'] ?? 'Cash';
     final receipt = payment['receiptNumber'] ?? 'N/A';
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.transparent),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: isDark ? Colors.black.withOpacity(0.2) : Colors.black.withOpacity(0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         child: Column(
           children: [
             Row(
@@ -135,18 +140,22 @@ class _StudentFeesHistoryScreenState extends State<StudentFeesHistoryScreen> {
                   children: [
                     Text(
                       '$month $year',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: isDark ? GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white) : const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
                       'Paid on $dateStr',
-                      style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                      style: isDark ? GoogleFonts.outfit(color: Colors.white60, fontSize: 13) : const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
                     ),
                   ],
                 ),
                 Text(
-                  '₹$amount',
-                  style: const TextStyle(
+                  '₹${NumberFormat('#,###').format(amount)}',
+                  style: isDark ? GoogleFonts.outfit(
+                    fontWeight: FontWeight.w900,
+                    color: AppTheme.accentBlue,
+                    fontSize: 20,
+                  ) : const TextStyle(
                     fontWeight: FontWeight.w900,
                     color: AppTheme.primaryBlue,
                     fontSize: 18,
@@ -161,8 +170,8 @@ class _StudentFeesHistoryScreenState extends State<StudentFeesHistoryScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildInfoTag(Icons.account_balance_wallet_outlined, method),
-                _buildInfoTag(Icons.receipt_long_outlined, receipt),
+                _buildInfoTag(Icons.account_balance_wallet_outlined, method, isDark),
+                _buildInfoTag(Icons.receipt_long_outlined, receipt, isDark),
                 const StatusChip(label: 'PAID', color: AppTheme.successGreen),
               ],
             ),
@@ -172,14 +181,14 @@ class _StudentFeesHistoryScreenState extends State<StudentFeesHistoryScreen> {
     );
   }
 
-  Widget _buildInfoTag(IconData icon, String text) {
+  Widget _buildInfoTag(IconData icon, String text, bool isDark) {
     return Row(
       children: [
-        Icon(icon, size: 14, color: AppTheme.textSecondary),
+        Icon(icon, size: 14, color: isDark ? Colors.white60 : AppTheme.textSecondary),
         const SizedBox(width: 4),
         Text(
           text,
-          style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary, fontWeight: FontWeight.w500),
+          style: GoogleFonts.outfit(fontSize: 12, color: isDark ? Colors.white60 : AppTheme.textSecondary, fontWeight: FontWeight.w500),
         ),
       ],
     );

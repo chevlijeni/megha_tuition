@@ -73,8 +73,9 @@ class _StudentListScreenState extends State<StudentListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: AppTheme.backgroundLight,
+      backgroundColor: isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight,
       appBar: AppBar(
         toolbarHeight: 120, // Taller for the search bar integration
         flexibleSpace: Container(
@@ -110,12 +111,12 @@ class _StudentListScreenState extends State<StudentListScreen> {
             Container(
               height: 44,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: isDark ? Colors.white10 : Colors.white,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: TextField(
                 onChanged: (value) => setState(() => _searchQuery = value),
-                style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
+                style: TextStyle(fontSize: 14, color: isDark ? Colors.white : AppTheme.textPrimary),
                 decoration: InputDecoration(
                   hintText: 'Search students...',
                   hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
@@ -177,6 +178,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
   }
 
   Widget _buildFilterBar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bool hasFilters = _searchQuery.isNotEmpty || _selectedBatch != 'All' || _selectedClass != 'All' || _selectedBoard != 'All' || _showPendingOnly;
 
     return Padding(
@@ -209,12 +211,12 @@ class _StudentListScreenState extends State<StudentListScreen> {
                     onChanged: (val) => setState(() => _selectedBoard = val!),
                   ),
                   const SizedBox(width: 8),
-                  FilterChip(
+                    FilterChip(
                     label: Text(
                       'Pending',
                       style: TextStyle(
                         fontSize: 12,
-                        color: _showPendingOnly ? Colors.white : AppTheme.textSecondary,
+                        color: _showPendingOnly ? Colors.white : (isDark ? Colors.white70 : AppTheme.textSecondary),
                         fontWeight: _showPendingOnly ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
@@ -222,8 +224,8 @@ class _StudentListScreenState extends State<StudentListScreen> {
                     onSelected: (val) => setState(() => _showPendingOnly = val),
                     selectedColor: AppTheme.errorRed,
                     checkmarkColor: Colors.white,
-                    backgroundColor: Colors.white,
-                    side: BorderSide(color: _showPendingOnly ? AppTheme.errorRed : Colors.grey.shade200),
+                    backgroundColor: isDark ? AppTheme.surfaceDark : Colors.white,
+                    side: BorderSide(color: _showPendingOnly ? AppTheme.errorRed : (isDark ? Colors.white10 : Colors.grey.shade200)),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ],
@@ -257,14 +259,15 @@ class _StudentListScreenState extends State<StudentListScreen> {
     required List<String> items,
     required ValueChanged<String?> onChanged,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bool isFiltered = value != 'All';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14),
       height: 40,
       decoration: BoxDecoration(
-        color: isFiltered ? AppTheme.primaryBlue : Colors.white,
+        color: isFiltered ? AppTheme.primaryBlue : (isDark ? AppTheme.surfaceDark : Colors.white),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isFiltered ? AppTheme.primaryBlue : Colors.grey.shade200),
+        border: Border.all(color: isFiltered ? AppTheme.primaryBlue : (isDark ? Colors.white10 : Colors.grey.shade200)),
         boxShadow: [
           if (isFiltered)
             BoxShadow(
@@ -304,7 +307,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
                 itemValue,
                 softWrap: false,
                 overflow: TextOverflow.visible,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: isDark ? Colors.white : AppTheme.textPrimary),
               ),
             );
           }).toList(),
@@ -324,11 +327,13 @@ class _StudentListScreenState extends State<StudentListScreen> {
     final feeAmount = fee['feeAmount']?.toString() ?? '0';
     final status = student['status'] ?? 'Active';
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? AppTheme.surfaceDark : Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.grey.withOpacity(0.05)),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.grey.withOpacity(0.05)),
         boxShadow: [
           BoxShadow(
             color: AppTheme.primaryBlue.withOpacity(0.04),
@@ -356,18 +361,21 @@ class _StudentListScreenState extends State<StudentListScreen> {
           child: Row(
             children: [
               Container(
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  gradient: AppTheme.primaryGradient,
+                  color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.primaryBlue.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                padding: const EdgeInsets.all(2),
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
+                child: Center(
+                  child: Text(
+                    name.isNotEmpty ? name[0].toUpperCase() : '?',
+                    style: TextStyle(
+                      color: isDark ? Colors.white : AppTheme.primaryBlue,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
                   ),
-                  child: const Icon(Icons.person_rounded, color: AppTheme.primaryBlue, size: 28),
                 ),
               ),
               const SizedBox(width: 16),

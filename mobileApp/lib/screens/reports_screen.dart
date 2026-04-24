@@ -47,10 +47,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
     final students = (_reportData?['students'] as List?) ?? [];
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
+      backgroundColor: isDark ? AppTheme.backgroundDark : AppTheme.backgroundLight,
       appBar: AppBar(
         toolbarHeight: 80,
-        flexibleSpace: Container(decoration: AppTheme.headerDecoration),
+        flexibleSpace: Container(decoration: AppTheme.headerDecorationWithMode(isDark)),
         automaticallyImplyLeading: false,
         title: const Text('Fee Reports', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       ),
@@ -62,16 +65,24 @@ class _ReportsScreenState extends State<ReportsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Collection Trend',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                style: TextStyle(
+                  fontSize: 18, 
+                  fontWeight: FontWeight.bold, 
+                  color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary
+                ),
               ),
               const SizedBox(height: 16),
               _buildBarGraph(),
               const SizedBox(height: 32),
-              const Text(
+              Text(
                 'Monthly Collection Review',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                style: TextStyle(
+                  fontSize: 18, 
+                  fontWeight: FontWeight.bold, 
+                  color: isDark ? AppTheme.textPrimaryDark : AppTheme.textPrimary
+                ),
               ),
               const SizedBox(height: 16),
               _buildSummaryCards(),
@@ -89,12 +100,20 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final totalExpected = stats['totalFees'] ?? 1; // avoid div by 0
     final percent = (collected / totalExpected).clamp(0.0, 1.0);
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? AppTheme.surfaceDark : Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20)],
+        border: Border.all(color: isDark ? Colors.white.withOpacity(0.04) : Colors.transparent),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.05), 
+            blurRadius: 20
+          )
+        ],
       ),
       child: Column(
         children: [
@@ -112,8 +131,21 @@ class _ReportsScreenState extends State<ReportsScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Monthly Goal Progress', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                  Text('${(percent * 100).toInt()}%', style: const TextStyle(fontWeight: FontWeight.w800, color: AppTheme.primaryBlue)),
+                  Text(
+                    'Monthly Goal Progress', 
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600, 
+                      fontSize: 13,
+                      color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
+                    )
+                  ),
+                  Text(
+                    '${(percent * 100).toInt()}%', 
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800, 
+                      color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue
+                    )
+                  ),
                 ],
               ),
               const SizedBox(height: 10),
@@ -134,11 +166,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
   }
 
   Widget _buildSimpleStat(String value, String label, Color color) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: color)),
-        Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+        Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: color)),
+        Text(
+          label, 
+          style: TextStyle(
+            color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary, 
+            fontSize: 12, 
+            fontWeight: FontWeight.w600
+          )
+        ),
       ],
     );
   }
@@ -173,13 +213,21 @@ class _ReportsScreenState extends State<ReportsScreen> {
       if (s['total'] > maxEarning) maxEarning = s['total'];
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Container(
       height: 240,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? AppTheme.surfaceDark : Colors.white,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20)],
+        border: Border.all(color: isDark ? Colors.white.withOpacity(0.04) : Colors.transparent),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.05), 
+            blurRadius: 20
+          )
+        ],
       ),
       child: Stack(
         children: [
@@ -189,7 +237,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
             children: List.generate(4, (index) => Container(
               height: 1,
               margin: const EdgeInsets.only(top: 24, bottom: 8),
-              color: Colors.grey.shade100,
+              color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
             )),
           ),
           
@@ -200,7 +248,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     // Y Axis Line
-                    Container(width: 1.5, color: Colors.grey.shade300),
+                    Container(width: 1.5, color: isDark ? Colors.white10 : Colors.grey.shade300),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Row(
@@ -221,7 +269,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               // X Axis Line
               Padding(
                 padding: const EdgeInsets.only(left: 0),
-                child: Container(height: 1.5, color: Colors.grey.shade300),
+                child: Container(height: 1.5, color: isDark ? Colors.white10 : Colors.grey.shade300),
               ),
               const SizedBox(height: 30), // Space for labels handled inside _buildBar is not enough now
             ],
@@ -235,11 +283,19 @@ class _ReportsScreenState extends State<ReportsScreen> {
     final double actualHeight = (120 * heightFactor).clamp(4.0, 120.0);
     final bool isZero = heightFactor == 0;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         if (amount.isNotEmpty)
-          Text(amount, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppTheme.primaryBlue))
+          Text(
+            amount, 
+            style: TextStyle(
+              fontSize: 10, 
+              fontWeight: FontWeight.bold, 
+              color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue
+            )
+          )
         else
           const SizedBox(height: 12),
         const SizedBox(height: 4),
@@ -248,7 +304,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           height: actualHeight,
           decoration: BoxDecoration(
             gradient: isZero ? null : AppTheme.primaryGradient,
-            color: isZero ? Colors.grey.shade100 : null,
+            color: isZero ? (isDark ? Colors.white10 : Colors.grey.shade100) : null,
             borderRadius: BorderRadius.circular(8),
           ),
         ),
@@ -256,7 +312,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
         // The label is now pushed further down
         Transform.translate(
           offset: const Offset(0, 32),
-          child: Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppTheme.textSecondary)),
+          child: Text(
+            label, 
+            style: TextStyle(
+              fontSize: 11, 
+              fontWeight: FontWeight.w600, 
+              color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary
+            )
+          ),
         ),
       ],
     );
