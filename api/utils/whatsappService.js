@@ -28,7 +28,12 @@ class WhatsAppService {
 
     console.log(`[WhatsApp] 🚀 Attempting to send to: ${cleanNumber}`);
     
-    const message = `Hi ${parentName}, fee of Rs. ${amount} for ${studentName} has been collected successfully for ${month} ${year}. Regards, Megha Tuition Classes.`;
+    const message = `*MEGHA TUITION CLASSES*
+
+Hi *${parentName}*, fee of *Rs. ${amount}* for *${studentName}* has been collected successfully for *${month} ${year}*.
+
+Regards,
+*Megha Tuition Classes*`;
 
     try {
       const response = await axios.post(`https://api.ultramsg.com/${instanceId}/messages/chat`, {
