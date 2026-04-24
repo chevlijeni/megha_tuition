@@ -8,7 +8,8 @@ import 'package:intl/intl.dart';
 
 class StudentListScreen extends StatefulWidget {
   final bool showOnlyPending;
-  const StudentListScreen({super.key, this.showOnlyPending = false});
+  final bool isTab;
+  const StudentListScreen({super.key, this.showOnlyPending = false, this.isTab = false});
 
   @override
   State<StudentListScreen> createState() => _StudentListScreenState();
@@ -79,7 +80,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
         flexibleSpace: Container(
           decoration: AppTheme.headerDecoration,
         ),
-        leading: Navigator.canPop(context) ? const BackButton(color: Colors.white) : null,
+        leading: (!widget.isTab && Navigator.canPop(context)) ? const BackButton(color: Colors.white) : null,
         title: Column(
           children: [
             Row(

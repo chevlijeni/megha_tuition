@@ -11,11 +11,16 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Megha Tuition Classes',
-      theme: AppTheme.lightTheme,
-      debugShowCheckedModeBanner: false,
-      home: const SplashScreen(),
+    return AnimatedBuilder(
+      animation: ThemeManager.instance,
+      builder: (context, _) {
+        return MaterialApp(
+          title: 'Megha Tuition Classes',
+          theme: ThemeManager.instance.isDarkMode ? AppTheme.darkTheme : AppTheme.lightTheme,
+          debugShowCheckedModeBanner: false,
+          home: const SplashScreen(),
+        );
+      },
     );
   }
 }

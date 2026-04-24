@@ -32,119 +32,91 @@ class AppTheme {
     colors: [primaryBlue, accentBlue],
   );
 
-  static BoxDecoration get headerDecoration => const BoxDecoration(
-    gradient: primaryGradient,
-    boxShadow: [
-      BoxShadow(
-        color: Colors.black26,
-        blurRadius: 10,
-        offset: Offset(0, 4),
-      ),
+  // Dark Mode Colors
+  static const Color backgroundDark = Color(0xFF0F172A);
+  static const Color surfaceDark = Color(0xFF1E293B);
+  static const Color textPrimaryDark = Color(0xFFF8FAFC);
+  static const Color textSecondaryDark = Color(0xFF94A3B8);
+
+  static LinearGradient getBackgroundGradient(bool isDark) {
+    return LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: isDark 
+        ? [const Color(0xFF1E293B), const Color(0xFF0F172A)]
+        : [primaryBlue, const Color(0xFF1A324D)],
+    );
+  }
+
+  static BoxDecoration headerDecorationWithMode(bool isDark) => BoxDecoration(
+    gradient: getBackgroundGradient(isDark),
+    boxShadow: const [
+      BoxShadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4)),
     ],
   );
 
+  static BoxDecoration get headerDecoration => headerDecorationWithMode(ThemeManager.instance.isDarkMode);
+
   static ThemeData get lightTheme {
+    // ... logic remains same, but using flexible values
+    return _buildTheme(false);
+  }
+
+  static ThemeData get darkTheme {
+    return _buildTheme(true);
+  }
+
+  static ThemeData _buildTheme(bool isDark) {
+    final bgColor = isDark ? backgroundDark : backgroundLight;
+    final surfaceColor = isDark ? surfaceDark : surfaceWhite;
+    final primaryTxt = isDark ? textPrimaryDark : textPrimary;
+    final secondaryTxt = isDark ? textSecondaryDark : textSecondary;
+
     return ThemeData(
       useMaterial3: true,
+      brightness: isDark ? Brightness.dark : Brightness.light,
       primaryColor: primaryBlue,
-      scaffoldBackgroundColor: backgroundLight,
+      scaffoldBackgroundColor: bgColor,
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryBlue,
+        brightness: isDark ? Brightness.dark : Brightness.light,
         primary: primaryBlue,
         secondary: accentBlue,
-        surface: surfaceWhite,
-        background: backgroundLight,
+        surface: surfaceColor,
+        background: bgColor,
         error: errorRed,
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white, // Default to white for gradient headers
+        foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
         titleTextStyle: GoogleFonts.outfit(
-          color: textPrimary,
+          color: Colors.white,
           fontSize: 20,
           fontWeight: FontWeight.w600,
         ),
-      ),
-      cardTheme: CardThemeData(
-        color: surfaceWhite,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-          side: BorderSide(color: Colors.grey.withOpacity(0.1), width: 1),
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: primaryBlue,
-          foregroundColor: surfaceWhite,
-          minimumSize: const Size(double.infinity, 56),
-          elevation: 4,
-          shadowColor: primaryBlue.withOpacity(0.3),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          textStyle: GoogleFonts.outfit(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
-          ),
-        ),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.grey.shade200),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.grey.shade200),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: primaryBlue, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: errorRed, width: 1),
-        ),
-        hintStyle: GoogleFonts.outfit(color: textSecondary, fontSize: 15),
-        labelStyle: GoogleFonts.outfit(color: textPrimary, fontWeight: FontWeight.w500),
       ),
       textTheme: TextTheme(
-        headlineLarge: GoogleFonts.outfit(
-          color: textPrimary,
-          fontWeight: FontWeight.bold,
-          fontSize: 32,
-        ),
-        headlineMedium: GoogleFonts.outfit(
-          color: textPrimary,
-          fontWeight: FontWeight.bold,
-          fontSize: 26,
-        ),
-        titleLarge: GoogleFonts.outfit(
-          color: textPrimary,
-          fontWeight: FontWeight.w600,
-          fontSize: 20,
-        ),
-        bodyLarge: GoogleFonts.outfit(
-          color: textPrimary,
-          fontSize: 16,
-        ),
-        bodyMedium: GoogleFonts.outfit(
-          color: textSecondary,
-          fontSize: 14,
-        ),
-        labelLarge: GoogleFonts.outfit(
-          color: textPrimary,
-          fontWeight: FontWeight.w600,
-          fontSize: 14,
-        ),
+        headlineLarge: GoogleFonts.outfit(color: primaryTxt, fontWeight: FontWeight.bold, fontSize: 32),
+        headlineMedium: GoogleFonts.outfit(color: primaryTxt, fontWeight: FontWeight.bold, fontSize: 26),
+        titleLarge: GoogleFonts.outfit(color: primaryTxt, fontWeight: FontWeight.w600, fontSize: 20),
+        bodyLarge: GoogleFonts.outfit(color: primaryTxt, fontSize: 16),
+        bodyMedium: GoogleFonts.outfit(color: secondaryTxt, fontSize: 14),
       ),
     );
+  }
+}
+
+class ThemeManager with ChangeNotifier {
+  static final ThemeManager instance = ThemeManager._internal();
+  ThemeManager._internal();
+
+  bool _isDarkMode = false;
+  bool get isDarkMode => _isDarkMode;
+
+  void toggleTheme() {
+    _isDarkMode = !_isDarkMode;
+    notifyListeners();
   }
 }

@@ -78,41 +78,45 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.backgroundLight,
-      appBar: AppBar(
-        toolbarHeight: 70,
-        flexibleSpace: Container(
-          decoration: AppTheme.headerDecoration,
-        ),
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'Megha Tuition, Gujarat',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+    return AnimatedBuilder(
+      animation: ThemeManager.instance,
+      builder: (context, _) {
+        final isDark = ThemeManager.instance.isDarkMode;
+        return Scaffold(
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          appBar: AppBar(
+            toolbarHeight: 70,
+            flexibleSpace: Container(
+              decoration: AppTheme.headerDecorationWithMode(isDark),
+            ),
+            elevation: 0,
+            automaticallyImplyLeading: false,
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'Megha Tuition, Gujarat',
+                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(width: 4),
+                Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white.withOpacity(0.8), size: 20),
+              ],
+            ),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: IconButton(
+                  icon: Icon(
+                    isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded, 
+                    color: Colors.white, 
+                    size: 24
+                  ),
+                  onPressed: () => ThemeManager.instance.toggleTheme(),
+                ),
               ),
-            ),
-            const SizedBox(width: 4),
-            Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white.withOpacity(0.8), size: 20),
-          ],
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: IconButton(
-              icon: const Icon(Icons.notifications_rounded, color: Colors.white, size: 26),
-              onPressed: () {},
-            ),
+            ],
           ),
-        ],
-      ),
-      body: RefreshIndicator(
+          body: RefreshIndicator(
         onRefresh: () => _fetchDashboardData(forceRefresh: true),
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -238,6 +242,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         icon: const Icon(Icons.person_add_rounded),
         label: const Text('ADD STUDENT', style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 0.5)),
       ),
+        );
+      },
     );
   }
 

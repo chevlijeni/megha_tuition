@@ -7,7 +7,8 @@ import 'student_detail_screen.dart';
 import '../widgets/status_chip.dart';
 
 class CollectFeeScreen extends StatefulWidget {
-  const CollectFeeScreen({super.key});
+  final bool isTab;
+  const CollectFeeScreen({super.key, this.isTab = false});
 
   @override
   State<CollectFeeScreen> createState() => _CollectFeeScreenState();
@@ -72,7 +73,7 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
         flexibleSpace: Container(
           decoration: AppTheme.headerDecoration,
         ),
-        automaticallyImplyLeading: false,
+        leading: (!widget.isTab && Navigator.canPop(context)) ? const BackButton(color: Colors.white) : null,
         title: const Text(
           'Collect Fees',
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),

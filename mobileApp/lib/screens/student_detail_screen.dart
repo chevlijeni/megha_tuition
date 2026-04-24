@@ -4,6 +4,7 @@ import '../theme/app_theme.dart';
 import 'package:intl/intl.dart';
 import '../utils/api_service.dart';
 import 'add_student_wizard.dart';
+import 'student_fees_history_screen.dart';
 
 class StudentDetailScreen extends StatefulWidget {
   final String mongoId;
@@ -28,11 +29,32 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _loadFromCache();
     _fetchStudentDetails();
   }
 
+  void _loadFromCache() {
+    final cache = ApiService.allHomeData;
+    if (cache != null && cache['students'] != null) {
+      final cachedStudent = (cache['students'] as List).firstWhere(
+        (s) => s['_id'] == widget.mongoId,
+        orElse: () => null,
+      );
+      if (cachedStudent != null) {
+        setState(() {
+          _studentData = cachedStudent;
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   Future<void> _fetchStudentDetails() async {
-    setState(() => _isLoading = true);
+    // Only show loader if we don't have cached data yet
+    if (_studentData == null) {
+      setState(() => _isLoading = true);
+    }
+    
     final result = await ApiService.getStudentById(widget.mongoId);
     
     if (mounted) {
@@ -118,7 +140,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                   'Full Name': personal['fullName'] ?? widget.studentName,
                   'DOB': _formatDate(personal['dob']),
                   'Gender': personal['gender'] ?? 'N/A',
-                  'Status': _studentData!['status'] ?? 'Active',
+                  'Status': _studentData?['status'] ?? 'Active',
                 },
               ),
               _buildDetailSection(
@@ -139,7 +161,28 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
                   'Fee Amount': '₹ ${fee['feeAmount'] ?? 0}',
                   'Due Day': '${fee['dueDayOfMonth'] ?? 1}${_getDaySuffix(fee['dueDayOfMonth'] ?? 1)} of Month',
                   'Cycle': fee['billCycle'] ?? 'N/A',
+                  'Current Month Status': _studentData?['isPaidCurrentMonth'] == true ? 'Paid ✅' : 'Pending ⏳',
                 },
+                action: TextButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => StudentFeesHistoryScreen(
+                          studentId: widget.mongoId,
+                          studentName: widget.studentName,
+                          studentRollId: widget.studentId,
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.history_rounded, size: 18),
+                  label: const Text('View History', style: TextStyle(fontSize: 12)),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppTheme.primaryBlue,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                ),
               ),
               _buildDetailSection(
                 'Parent Details',
@@ -197,7 +240,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
     );
   }
 
-  Widget _buildDetailSection(String title, IconData icon, Map<String, String> data) {
+  Widget _buildDetailSection(String title, IconData icon, Map<String, String> data, {Widget? action}) {
     return Container(
       margin: const EdgeInsets.only(top: 20, left: 16, right: 16),
       decoration: BoxDecoration(
@@ -213,6 +256,7 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
           ListTile(
             leading: Icon(icon, color: AppTheme.primaryBlue),
             title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+            trailing: action,
           ),
           const Divider(height: 1),
           Padding(
