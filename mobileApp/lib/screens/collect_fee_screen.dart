@@ -696,11 +696,8 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
   void _showSuccessDialog() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final personal = _selectedStudent!['personalDetails'] ?? {};
-    final parent = _selectedStudent!['parentDetails'] ?? {};
     final studentName = personal['fullName'] ?? 'Student';
     final amount = _amountController.text;
-    final month = DateFormat('MMMM').format(DateTime.now());
-    final year = DateTime.now().year.toString();
 
     showDialog(
       context: context,
@@ -735,60 +732,26 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
                 ),
                 const SizedBox(height: 32),
                 
-                // Action Buttons
-                ElevatedButton.icon(
-                  onPressed: () {
-                    ReceiptHelper.generateAndShareReceipt(
-                      studentName: studentName,
-                      studentId: _selectedStudent!['studentId'],
-                      amount: amount,
-                      month: month,
-                      year: year,
-                      paymentMode: _selectedMode,
-                      parentName: parent['parentName'] ?? 'Parent',
-                      mobileNumber: parent['mobileNumber'] ?? '',
-                    );
-                  },
-                  icon: const Icon(Icons.picture_as_pdf_rounded),
-                  label: const Text('View/Print Receipt'),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 50),
-                    backgroundColor: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: () {
-                    ReceiptHelper.sendWhatsAppMessage(
-                      parentName: parent['parentName'] ?? 'Parent',
-                      mobileNumber: parent['mobileNumber'] ?? '',
-                      studentName: studentName,
-                      amount: amount,
-                      month: month,
-                      year: year,
-                    );
-                  },
-                  icon: const Icon(Icons.message_rounded, color: AppTheme.successGreen),
-                  label: const Text('Send WhatsApp Notification'),
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 50),
-                    side: const BorderSide(color: AppTheme.successGreen),
-                    foregroundColor: AppTheme.successGreen,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                TextButton(
+                // Done Button (Main Action)
+                ElevatedButton(
                   onPressed: () {
                     Navigator.pop(context); // Close dialog
                     setState(() {
                       _selectedStudent = null;
                       _amountController.clear();
                       _referenceController.clear();
+                      _searchController.clear(); // Important: Reset search
+                      _selectedMode = 'Cash'; // Reset mode
                     });
                     _fetchFeesData(); // Refresh stats and list
                   },
-                  child: Text('Done', style: TextStyle(color: isDark ? Colors.white70 : AppTheme.textSecondary)),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 52),
+                    backgroundColor: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: const Text('Done', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 ),
               ],
             ),
