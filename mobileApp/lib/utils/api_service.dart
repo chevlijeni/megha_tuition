@@ -3,8 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  // static const String baseUrl = 'https://megha-tuition.onrender.com/api/v1';
-  static const String baseUrl = 'http://localhost:5000/api/v1';
+  static const String baseUrl = 'https://megha-tuition.onrender.com/api/v1';
+  // static const String baseUrl = 'http://localhost:5000/api/v1';
 
   // Persistent client for connection pooling (reduces TLS handshake overhead)
   static final http.Client _client = http.Client();
