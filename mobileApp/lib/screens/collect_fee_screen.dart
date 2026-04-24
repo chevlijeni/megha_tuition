@@ -607,6 +607,41 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
     if (mounted) {
       setState(() => _isLoading = false);
       if (result['success']) {
+        // AUTOMATIC FLOW: Trigger WhatsApp and Sharing immediately
+        final transaction = result['data'];
+        final student = transaction['student'] ?? {};
+        final personal = student['personalDetails'] ?? {};
+        final parent = student['parentDetails'] ?? {};
+        
+        final studentName = personal['fullName'] ?? 'Student';
+        final parentName = parent['parentName'] ?? 'Parent';
+        final mobile = parent['mobileNumber'] ?? '';
+        final amount = transaction['amount']?.toString() ?? _amountController.text;
+        final month = DateFormat('MMMM').format(DateTime.now());
+        final year = DateTime.now().year.toString();
+
+        // 1. Trigger WhatsApp Announcement
+        ReceiptHelper.sendWhatsAppMessage(
+          parentName: parentName,
+          mobileNumber: mobile,
+          studentName: studentName,
+          amount: amount,
+          month: month,
+          year: year,
+        );
+
+        // 2. Trigger PDF Sharing
+        ReceiptHelper.generateAndShareReceipt(
+          studentName: studentName,
+          studentId: student['studentId'] ?? '',
+          amount: amount,
+          month: month,
+          year: year,
+          paymentMode: _selectedMode,
+          parentName: parentName,
+          mobileNumber: mobile,
+        );
+
         _showSuccessDialog();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['message'])));

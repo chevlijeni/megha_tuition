@@ -21,5 +21,10 @@ exports.createTransaction = catchAsync(async (req, res, next) => {
     }
 
     const transaction = await Transaction.create(req.body);
-    sendResponse(res, 201, 'Transaction created successfully', transaction);
+    
+    // Populate student details so frontend can immediately generate receipt
+    const populatedTransaction = await Transaction.findById(transaction._id)
+        .populate('student', 'personalDetails parentDetails studentId feeDetails academicDetails');
+
+    sendResponse(res, 201, 'Transaction created successfully', populatedTransaction);
 });

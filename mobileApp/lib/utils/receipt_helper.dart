@@ -137,10 +137,10 @@ class ReceiptHelper {
     required String month,
     required String year,
   }) async {
-    // Format mobile number: remove spaces and ensure country code (assume India +91 if 10 digits)
+    // Format mobile number: remove spaces and ensure country code (assume Pakistan +92 if 10 digits)
     String cleanNumber = mobileNumber.replaceAll(RegExp(r'[^0-9]'), '');
     if (cleanNumber.length == 10) {
-      cleanNumber = '91$cleanNumber';
+      cleanNumber = '92$cleanNumber';
     }
 
     final message = Uri.encodeComponent(
