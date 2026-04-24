@@ -661,7 +661,7 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
         final month = DateFormat('MMMM').format(DateTime.now());
         final year = DateTime.now().year.toString();
 
-        // 1. Trigger WhatsApp Announcement
+        // 1. Trigger WhatsApp Announcement (Fire and forget)
         ReceiptHelper.sendWhatsAppMessage(
           parentName: parentName,
           mobileNumber: mobile,
@@ -669,9 +669,9 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
           amount: amount,
           month: month,
           year: year,
-        );
+        ).catchError((e) => print('WHATSAPP ERROR: $e'));
 
-        // 2. Trigger PDF Sharing
+        // 2. Trigger PDF Sharing (Fire and forget)
         ReceiptHelper.generateAndShareReceipt(
           studentName: studentName,
           studentId: student['studentId'] ?? '',
@@ -681,7 +681,7 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
           paymentMode: _selectedMode,
           parentName: parentName,
           mobileNumber: mobile,
-        );
+        ).catchError((e) => print('SHARE ERROR: $e'));
 
         _showSuccessDialog();
       } else {
