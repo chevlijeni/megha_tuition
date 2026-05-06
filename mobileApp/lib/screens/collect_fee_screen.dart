@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/link.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import 'transaction_list_screen.dart';
@@ -701,26 +702,27 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
                 const SizedBox(height: 32),
                 
                 // Share on WhatsApp Button
-                ElevatedButton.icon(
-                  onPressed: () {
-                    final parent = _selectedStudent!['parentDetails'] ?? {};
-                    ReceiptHelper.sendWhatsAppMessage(
-                      parentName: parent['parentName'] ?? 'Parent',
-                      mobileNumber: parent['mobileNumber'] ?? '',
-                      studentName: personal['fullName'] ?? 'Student',
-                      amount: amount,
-                      month: DateFormat('MMMM').format(DateTime.now()),
-                      year: DateTime.now().year.toString(),
-                    );
-                  },
-                  icon: const Icon(Icons.send_rounded, size: 20),
-                  label: const Text('Share on WhatsApp', style: TextStyle(fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 52),
-                    backgroundColor: const Color(0xFF25D366),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                Link(
+                  uri: Uri.parse(ReceiptHelper.getWhatsAppUrl(
+                    parentName: _selectedStudent!['parentDetails']?['parentName'] ?? 'Parent',
+                    mobileNumber: _selectedStudent!['parentDetails']?['mobileNumber'] ?? '',
+                    studentName: personal['fullName'] ?? 'Student',
+                    amount: amount,
+                    month: DateFormat('MMMM').format(DateTime.now()),
+                    year: DateTime.now().year.toString(),
+                  )),
+                  target: LinkTarget.blank,
+                  builder: (context, followLink) => ElevatedButton.icon(
+                    onPressed: followLink,
+                    icon: const Icon(Icons.send_rounded, size: 20),
+                    label: const Text('Share on WhatsApp', style: TextStyle(fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 52),
+                      backgroundColor: const Color(0xFF25D366),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 24),

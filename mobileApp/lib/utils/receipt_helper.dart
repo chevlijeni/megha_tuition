@@ -18,15 +18,14 @@ class ReceiptHelper {
            'Regards,\n*Megha Chevli*';
   }
 
-  static Future<void> sendWhatsAppMessage({
+  static String getWhatsAppUrl({
     required String parentName,
     required String mobileNumber,
     required String studentName,
     required String amount,
     required String month,
     required String year,
-  }) async {
-    // Format mobile number: remove spaces and ensure country code (assume India +91 if 10 digits)
+  }) {
     String cleanNumber = mobileNumber.replaceAll(RegExp(r'[^0-9]'), '');
     if (cleanNumber.length == 10) {
       cleanNumber = '91$cleanNumber';
@@ -40,18 +39,46 @@ class ReceiptHelper {
       year: year,
     ));
 
-    // Simplified for maximum iOS compatibility
-    final waUrl = 'https://wa.me/$cleanNumber?text=$message';
+    return 'https://wa.me/$cleanNumber?text=$message';
+  }
+
+  static Future<void> sendWhatsAppMessage({
+    required String parentName,
+    required String mobileNumber,
+    required String studentName,
+    required String amount,
+    required String month,
+    required String year,
+  }) async {
+    String cleanNumber = mobileNumber.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleanNumber.length == 10) {
+      cleanNumber = '91$cleanNumber';
+    }
+
+    final message = Uri.encodeComponent(getReceiptMessage(
+      parentName: parentName,
+      studentName: studentName,
+      amount: amount,
+      month: month,
+      year: year,
+    ));
+
+    final waUrl = getWhatsAppUrl(
+      parentName: parentName,
+      mobileNumber: mobileNumber,
+      studentName: studentName,
+      amount: amount,
+      month: month,
+      year: year,
+    );
 
     try {
-      // webOnlyWindowName: '_top' is critical for iOS Chrome and PWA to bypass popup blockers
       await launchUrl(
         Uri.parse(waUrl),
         mode: LaunchMode.platformDefault,
         webOnlyWindowName: '_top',
       );
     } catch (e) {
-      // If that fails, try the absolute direct app scheme
       final appScheme = 'whatsapp://send?phone=$cleanNumber&text=$message';
       try {
         await launchUrl(
@@ -60,7 +87,6 @@ class ReceiptHelper {
           webOnlyWindowName: '_top',
         );
       } catch (e2) {
-        // Final fallback to api link
         final apiFallback = 'https://api.whatsapp.com/send?phone=$cleanNumber&text=$message';
         await launchUrl(
           Uri.parse(apiFallback), 

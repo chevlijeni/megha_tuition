@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/link.dart';
 import '../theme/app_theme.dart';
 import '../widgets/status_chip.dart';
 import '../utils/api_service.dart';
@@ -215,21 +216,23 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isDark ? Colors.white : AppTheme.textPrimary),
                     ),
                     const SizedBox(height: 4),
-                        IconButton(
-                          visualDensity: VisualDensity.compact,
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          icon: const Icon(Icons.send_rounded, size: 16, color: Color(0xFF25D366)),
-                          onPressed: () {
-                            ReceiptHelper.sendWhatsAppMessage(
-                              parentName: parent['parentName'] ?? 'Parent',
-                              mobileNumber: parent['mobileNumber'] ?? '',
-                              studentName: name,
-                              amount: amount.toString(),
-                              month: paymentDate != null ? DateFormat('MMMM').format(paymentDate) : 'N/A',
-                              year: paymentDate != null ? paymentDate.year.toString() : 'N/A',
-                            );
-                          },
+                        Link(
+                          uri: Uri.parse(ReceiptHelper.getWhatsAppUrl(
+                            parentName: parent['parentName'] ?? 'Parent',
+                            mobileNumber: parent['mobileNumber'] ?? '',
+                            studentName: name,
+                            amount: amount.toString(),
+                            month: paymentDate != null ? DateFormat('MMMM').format(paymentDate) : 'N/A',
+                            year: paymentDate != null ? paymentDate.year.toString() : 'N/A',
+                          )),
+                          target: LinkTarget.blank,
+                          builder: (context, followLink) => IconButton(
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            icon: const Icon(Icons.send_rounded, size: 16, color: Color(0xFF25D366)),
+                            onPressed: followLink,
+                          ),
                         ),
                   ],
                 ),
