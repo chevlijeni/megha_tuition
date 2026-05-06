@@ -4,6 +4,7 @@ import '../theme/app_theme.dart';
 import '../utils/api_service.dart';
 import '../widgets/status_chip.dart';
 import 'package:intl/intl.dart';
+import '../utils/receipt_helper.dart';
 
 class StudentFeesHistoryScreen extends StatefulWidget {
   final String studentId;
@@ -135,31 +136,75 @@ class _StudentFeesHistoryScreenState extends State<StudentFeesHistoryScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '$month $year',
+                        style: isDark ? GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white) : const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Paid on $dateStr',
+                        style: isDark ? GoogleFonts.outfit(color: Colors.white60, fontSize: 13) : const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
                 Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '$month $year',
-                      style: isDark ? GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.white) : const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      '₹${NumberFormat('#,###').format(amount)}',
+                      style: isDark ? GoogleFonts.outfit(
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.accentBlue,
+                        fontSize: 20,
+                      ) : const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        color: AppTheme.primaryBlue,
+                        fontSize: 18,
+                      ),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Paid on $dateStr',
-                      style: isDark ? GoogleFonts.outfit(color: Colors.white60, fontSize: 13) : const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          icon: Icon(Icons.share_rounded, size: 18, color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue),
+                          onPressed: () {
+                            ReceiptHelper.shareReceipt(
+                              parentName: _student?['parentDetails']?['parentName'] ?? 'Parent',
+                              studentName: widget.studentName,
+                              amount: amount.toString(),
+                              month: month,
+                              year: year.toString(),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          icon: const Icon(Icons.send_rounded, size: 18, color: Color(0xFF25D366)),
+                          onPressed: () {
+                            ReceiptHelper.sendWhatsAppMessage(
+                              parentName: _student?['parentDetails']?['parentName'] ?? 'Parent',
+                              mobileNumber: _student?['parentDetails']?['mobileNumber'] ?? '',
+                              studentName: widget.studentName,
+                              amount: amount.toString(),
+                              month: month,
+                              year: year.toString(),
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ],
-                ),
-                Text(
-                  '₹${NumberFormat('#,###').format(amount)}',
-                  style: isDark ? GoogleFonts.outfit(
-                    fontWeight: FontWeight.w900,
-                    color: AppTheme.accentBlue,
-                    fontSize: 20,
-                  ) : const TextStyle(
-                    fontWeight: FontWeight.w900,
-                    color: AppTheme.primaryBlue,
-                    fontSize: 18,
-                  ),
                 ),
               ],
             ),

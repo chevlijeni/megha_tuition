@@ -4,7 +4,9 @@ import '../theme/app_theme.dart';
 import 'transaction_list_screen.dart';
 import '../utils/api_service.dart';
 import 'package:intl/intl.dart';
+import 'student_fees_history_screen.dart';
 import 'student_detail_screen.dart';
+import '../widgets/custom_snack_bar.dart';
 import '../widgets/status_chip.dart';
 import '../utils/receipt_helper.dart';
 
@@ -375,6 +377,10 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
           final personal = student['personalDetails'] ?? {};
           final name = personal['fullName']?.toString().toLowerCase() ?? '';
           final id = student['studentId']?.toString().toLowerCase() ?? '';
+          final status = student['status'] ?? 'Active';
+          
+          if (status != 'Active') return false;
+          
           final query = textEditingValue.text.toLowerCase();
           return name.contains(query) || id.contains(query);
         }).cast<Map<String, dynamic>>();
@@ -441,7 +447,7 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
                       child: Text(personal['fullName'][0].toUpperCase(), style: const TextStyle(color: AppTheme.primaryBlue)),
                     ),
                     title: Text(personal['fullName'], style: TextStyle(color: isDark ? Colors.white : AppTheme.textPrimary, fontWeight: FontWeight.bold)),
-                    subtitle: Text('ID: ${option['studentId']} • ${academic['className']}', style: TextStyle(color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary)),
+                    subtitle: Text('ID: ${option['studentId']} • ${academic['className'] ?? ''} • ${academic['board'] ?? ''} • ${academic['batchTime'] ?? ''}', style: TextStyle(color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary)),
                     onTap: () => onSelected(option),
                   );
                 },
@@ -632,7 +638,7 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
   Future<void> _handleCollectPayment() async {
     if (_selectedStudent == null) return;
     if (_amountController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter amount')));
+      CustomSnackBar.show(context, message: 'Please enter amount', isError: true);
       return;
     }
 
@@ -650,7 +656,7 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
       if (result['success']) {
         _showSuccessDialog();
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['message'])));
+        CustomSnackBar.show(context, message: result['message'], isError: true);
       }
     }
   }
@@ -694,10 +700,33 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
                 ),
                 const SizedBox(height: 32),
                 
-                const SizedBox(height: 32),
+                // Share on WhatsApp Button
+                ElevatedButton.icon(
+                  onPressed: () {
+                    final parent = _selectedStudent!['parentDetails'] ?? {};
+                    ReceiptHelper.sendWhatsAppMessage(
+                      parentName: parent['parentName'] ?? 'Parent',
+                      mobileNumber: parent['mobileNumber'] ?? '',
+                      studentName: personal['fullName'] ?? 'Student',
+                      amount: amount,
+                      month: DateFormat('MMMM').format(DateTime.now()),
+                      year: DateTime.now().year.toString(),
+                    );
+                  },
+                  icon: const Icon(Icons.send_rounded, size: 20),
+                  label: const Text('Share on WhatsApp', style: TextStyle(fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 52),
+                    backgroundColor: const Color(0xFF25D366),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                ),
+                const SizedBox(height: 24),
                 
                 // Done Button (Main Action)
-                ElevatedButton(
+                TextButton(
                   onPressed: () {
                     Navigator.pop(context); // Close dialog
                     setState(() {
@@ -709,11 +738,9 @@ class _CollectFeeScreenState extends State<CollectFeeScreen> {
                     });
                     _fetchFeesData(); // Refresh stats and list
                   },
-                  style: ElevatedButton.styleFrom(
+                  style: TextButton.styleFrom(
                     minimumSize: const Size(double.infinity, 52),
-                    backgroundColor: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    foregroundColor: isDark ? Colors.white70 : AppTheme.textSecondary,
                   ),
                   child: const Text('Done', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 ),

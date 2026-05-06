@@ -204,19 +204,21 @@ class _ReportsScreenState extends State<ReportsScreen> {
       displayStats.add({
         'month': month,
         'label': _getMonthShort(month),
-        'total': realData?['total']?.toDouble() ?? 0.0,
+        'collected': realData?['collected']?.toDouble() ?? 0.0,
+        'expected': realData?['expected']?.toDouble() ?? 0.0,
       });
     }
 
-    double maxEarning = 1.0;
+    double maxVal = 1.0;
     for (var s in displayStats) {
-      if (s['total'] > maxEarning) maxEarning = s['total'];
+      if (s['expected'] > maxVal) maxVal = s['expected'];
+      if (s['collected'] > maxVal) maxVal = s['collected'];
     }
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Container(
-      height: 240,
+      height: 260,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: isDark ? AppTheme.surfaceDark : Colors.white,
@@ -231,12 +233,25 @@ class _ReportsScreenState extends State<ReportsScreen> {
       ),
       child: Stack(
         children: [
+          // Legend
+          Positioned(
+            right: 0,
+            top: 0,
+            child: Row(
+              children: [
+                _buildLegendItem('Expected', AppTheme.primaryBlue.withOpacity(0.3), isDark),
+                const SizedBox(width: 12),
+                _buildLegendItem('Collected', AppTheme.primaryBlue, isDark),
+              ],
+            ),
+          ),
+          
           // Background Guide Lines
           Column(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: List.generate(4, (index) => Container(
               height: 1,
-              margin: const EdgeInsets.only(top: 24, bottom: 8),
+              margin: const EdgeInsets.only(top: 32, bottom: 8),
               color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
             )),
           ),
@@ -249,17 +264,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
                   children: [
                     // Y Axis Line
                     Container(width: 1.5, color: isDark ? Colors.white10 : Colors.grey.shade300),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 4),
                     Expanded(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: displayStats.map((s) {
-                          final factor = s['total'] / maxEarning;
-                          final amountStr = s['total'] > 0 
-                            ? '₹${(s['total'] / 1000).toStringAsFixed(1)}k' 
-                            : '';
-                          return _buildBar(s['label'], factor, amountStr);
+                          return _buildDualBar(s['label'], s['expected'], s['collected'], maxVal);
                         }).toList(),
                       ),
                     ),
@@ -267,11 +278,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 ),
               ),
               // X Axis Line
-              Padding(
-                padding: const EdgeInsets.only(left: 0),
-                child: Container(height: 1.5, color: isDark ? Colors.white10 : Colors.grey.shade300),
-              ),
-              const SizedBox(height: 30), // Space for labels handled inside _buildBar is not enough now
+              Container(height: 1.5, color: isDark ? Colors.white10 : Colors.grey.shade300),
+              const SizedBox(height: 25),
             ],
           ),
         ],
@@ -279,43 +287,55 @@ class _ReportsScreenState extends State<ReportsScreen> {
     );
   }
 
-  Widget _buildBar(String label, double heightFactor, String amount) {
-    final double actualHeight = (120 * heightFactor).clamp(4.0, 120.0);
-    final bool isZero = heightFactor == 0;
+  Widget _buildLegendItem(String label, Color color, bool isDark) {
+    return Row(
+      children: [
+        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        const SizedBox(width: 4),
+        Text(label, style: TextStyle(fontSize: 10, color: isDark ? Colors.white60 : Colors.grey)),
+      ],
+    );
+  }
+
+  Widget _buildDualBar(String label, double expected, double collected, double maxVal) {
+    final double expHeight = (120 * (expected / maxVal)).clamp(4.0, 120.0);
+    final double collHeight = (120 * (collected / maxVal)).clamp(4.0, 120.0);
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        if (amount.isNotEmpty)
-          Text(
-            amount, 
-            style: TextStyle(
-              fontSize: 10, 
-              fontWeight: FontWeight.bold, 
-              color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue
-            )
-          )
-        else
-          const SizedBox(height: 12),
-        const SizedBox(height: 4),
-        Container(
-          width: 28,
-          height: actualHeight,
-          decoration: BoxDecoration(
-            gradient: isZero ? null : AppTheme.primaryGradient,
-            color: isZero ? (isDark ? Colors.white10 : Colors.grey.shade100) : null,
-            borderRadius: BorderRadius.circular(8),
-          ),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            // Expected Bar (Lighter)
+            Container(
+              width: 12,
+              height: expHeight,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white.withOpacity(0.1) : AppTheme.primaryBlue.withOpacity(0.1),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+              ),
+            ),
+            const SizedBox(width: 2),
+            // Collected Bar (Primary)
+            Container(
+              width: 12,
+              height: collHeight,
+              decoration: BoxDecoration(
+                gradient: AppTheme.primaryGradient,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 4), // Small gap to X-axis
-        // The label is now pushed further down
+        const SizedBox(height: 8),
         Transform.translate(
-          offset: const Offset(0, 32),
+          offset: const Offset(0, 0),
           child: Text(
             label, 
             style: TextStyle(
-              fontSize: 11, 
+              fontSize: 10, 
               fontWeight: FontWeight.w600, 
               color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary
             )

@@ -13,7 +13,7 @@ const studentSchema = new mongoose.Schema({
     },
     academicDetails: {
         className: { type: String, required: true },
-        board: { type: String, enum: ['GSEB', 'CBSC'], required: true },
+        board: { type: String, enum: ['GSEB', 'CBSC', 'Gujarati Medium'], required: true },
         batchTime: { type: String, enum: ['Morning', 'Afternoon', 'Evening'], required: true },
         schoolName: { type: String },
         enrollmentDate: { type: Date, required: true }

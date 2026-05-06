@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../theme/app_theme.dart';
 import '../utils/api_service.dart';
+import '../widgets/custom_snack_bar.dart';
 
 class ProfileScreen extends StatefulWidget {
   final Map<String, dynamic>? initialProfile;
@@ -62,17 +63,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (mounted) {
       setState(() => _isLoading = false);
       if (result['success']) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated successfully'), backgroundColor: AppTheme.successGreen),
-        );
+        CustomSnackBar.show(context, message: 'Profile updated successfully');
         setState(() {
           _profile = result['data'];
           _isEditing = false;
         });
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(result['message'])),
-        );
+        CustomSnackBar.show(context, message: result['message'], isError: true);
       }
     }
   }

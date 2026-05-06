@@ -13,10 +13,11 @@ exports.getSyncData = catchAsync(async (req, res, next) => {
     const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
 
-    // 1. Get Stats (Simplified logic from getDashboardStats)
+    // 1. Get Stats
     const totalStudents = await Student.countDocuments({ status: 'Active' });
-    const studentsListRaw = await Student.find({ status: 'Active' }, 'feeDetails.feeAmount');
-    const totalFees = studentsListRaw.reduce((sum, s) => sum + (s.feeDetails.feeAmount || 0), 0);
+    const activeStudents = await Student.find({ status: 'Active' }, 'feeDetails.feeAmount');
+    const totalFees = activeStudents.reduce((sum, s) => sum + (s.feeDetails.feeAmount || 0), 0);
+    
     const paymentsCurrentMonth = await Payment.find({ month: currentMonth, year: currentYear });
     const totalCollection = paymentsCurrentMonth.reduce((sum, p) => sum + (p.amount || 0), 0);
     const pendingFees = totalFees - totalCollection;
@@ -38,6 +39,7 @@ exports.getSyncData = catchAsync(async (req, res, next) => {
 
     // 2. Get Students (Logic from getStudents)
     const students = await Student.aggregate([
+        { $match: { status: 'Active' } },
         {
             $lookup: {
                 from: 'payments',
@@ -69,16 +71,23 @@ exports.getSyncData = catchAsync(async (req, res, next) => {
 
     // 3. Get Recent Payments (Logic from getPayments)
     const payments = await Payment.find()
-        .populate('student', 'personalDetails academicDetails studentId')
+        .populate('student', 'personalDetails academicDetails studentId status')
         .sort({ paymentDate: -1 })
         .limit(20); // Only return last 20 for sync, others can be paginated if needed later
 
-    // 4. Monthly Earnings for 6 months
-    const monthlyEarnings = await Payment.aggregate([
-        { $group: { _id: { month: "$month", year: "$year" }, total: { $sum: "$amount" } } },
+    // 4. Monthly Earnings for 6 months (Enhanced with Expected Total)
+    const earningsByMonth = await Payment.aggregate([
+        { $group: { _id: { month: "$month", year: "$year" }, collected: { $sum: "$amount" } } },
         { $sort: { "_id.year": -1, "_id.month": -1 } },
         { $limit: 6 }
     ]);
+
+    // For simplicity, we'll provide the current totalFees as the 'expected' for recent months
+    // since we don't have historical snapshots. 
+    const monthlyEarnings = earningsByMonth.map(m => ({
+        ...m,
+        expected: totalFees // Current totalFees is used as a baseline
+    }));
 
     sendResponse(res, 200, 'Sync Successful', {
         stats,
@@ -97,6 +106,7 @@ exports.getStudents = catchAsync(async (req, res, next) => {
     const currentYear = now.getFullYear();
 
     const students = await Student.aggregate([
+        { $match: { status: 'Active' } },
         {
             $lookup: {
                 from: 'payments',
@@ -330,3 +340,37 @@ exports.collectPayment = catchAsync(async (req, res, next) => {
 
     sendResponse(res, 201, 'Payment collected successfully', populatedPayment);
 });
+
+// @desc    Delete student (Soft delete - sets status to Inactive)
+// @route   DELETE /api/v1/students/:id
+// @access  Private
+exports.deleteStudent = catchAsync(async (req, res, next) => {
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+
+    // Check if student has paid for current month
+    const currentPayment = await Payment.findOne({
+        student: req.params.id,
+        month: currentMonth,
+        year: currentYear
+    });
+
+    if (currentPayment) {
+        return sendResponse(res, 400, 'Deletion Not Allowed: This student has already paid fees for the current month. You can only delete this student after the month ends.');
+    }
+
+    const student = await Student.findByIdAndUpdate(
+        req.params.id, 
+        { status: 'Inactive' }, 
+        { new: true, runValidators: true }
+    );
+
+    if (!student) {
+        return sendResponse(res, 404, 'Student not found');
+    }
+
+    sendResponse(res, 200, 'Student marked as Inactive successfully', student);
+});
+
+

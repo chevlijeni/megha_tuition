@@ -294,7 +294,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildTopErrorNotification() {
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 500),
-      curve: Curves.easeOutBack, // Nice bounce effect
+      curve: Curves.easeOutBack,
       top: _isErrorVisible ? 20 : -100,
       left: 20,
       right: 20,
@@ -308,26 +308,19 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 decoration: BoxDecoration(
-                  color: AppTheme.errorRed.withOpacity(0.2),
+                  color: AppTheme.errorRed.withOpacity(0.9),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: AppTheme.errorRed.withOpacity(0.3),
+                    color: Colors.white24,
                     width: 1.5,
                   ),
                 ),
                 child: Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppTheme.errorRed.withOpacity(0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.error_outline_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
+                    const Icon(
+                      Icons.error_outline_rounded,
+                      color: Colors.white,
+                      size: 20,
                     ),
                     const SizedBox(width: 16),
                     Expanded(

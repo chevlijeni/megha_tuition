@@ -8,6 +8,7 @@ import 'transaction_list_screen.dart';
 import 'add_student_wizard.dart';
 import 'student_list_screen.dart';
 import 'student_fees_history_screen.dart';
+import 'main_scaffold.dart';
 import '../utils/api_service.dart';
 import 'package:intl/intl.dart';
 
@@ -39,8 +40,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
       setState(() {
         if (result['success']) {
           _stats = result['data']['stats'];
-          // Take only the first 4 for the recent list
-          _recentPayments = (result['data']['payments'] as List).take(4).toList();
+          
+          // Filter for current month's transactions and take last 5
+          final now = DateTime.now();
+          final allPayments = (result['data']['payments'] as List? ?? []);
+          _recentPayments = allPayments.where((p) {
+            if (p['paymentDate'] == null) return false;
+            try {
+              final date = DateTime.parse(p['paymentDate']).toLocal();
+              return date.month == now.month && date.year == now.year;
+            } catch (e) {
+              return false;
+            }
+          }).take(5).toList();
         }
         _isLoading = false;
       });
@@ -192,9 +204,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Recent Transactions',
+                  'Recent Transactions( ${DateFormat('MMMM').format(DateTime.now())} )',
                   style: TextStyle(
-                    fontSize: 22,
+                    fontSize: 18,
                     fontWeight: FontWeight.w900,
                     color: isDark ? Colors.white : AppTheme.textPrimary,
                     letterSpacing: -0.5,
@@ -252,8 +264,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
             child: FloatingActionButton.extended(
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const AddStudentWizard()));
+              onPressed: () async {
+                final added = await Navigator.push(context, MaterialPageRoute(builder: (context) => const AddStudentWizard()));
+                if (added == true && mounted) {
+                  context.findAncestorStateOfType<MainScaffoldState>()?.switchTab(1);
+                }
               },
               backgroundColor: Colors.transparent,
               foregroundColor: Colors.white,
@@ -267,8 +282,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           )
         : FloatingActionButton.extended(
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const AddStudentWizard()));
+            onPressed: () async {
+              final added = await Navigator.push(context, MaterialPageRoute(builder: (context) => const AddStudentWizard()));
+              if (added == true && mounted) {
+                context.findAncestorStateOfType<MainScaffoldState>()?.switchTab(1);
+              }
             },
             backgroundColor: AppTheme.primaryBlue,
             foregroundColor: Colors.white,

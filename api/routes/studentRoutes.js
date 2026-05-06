@@ -1,5 +1,5 @@
 const express = require('express');
-const { getStudents, getStudent, createStudent, updateStudent, getDashboardStats, getPayments, collectPayment, getSyncData, getStudentPayments } = require('../controllers/studentController');
+const { getStudents, getStudent, createStudent, updateStudent, getDashboardStats, getPayments, collectPayment, getSyncData, getStudentPayments, deleteStudent } = require('../controllers/studentController');
 const { createStudentValidate } = require('../validations/studentValidation');
 const { protect } = require('../middlewares/authMiddleware');
 
@@ -23,6 +23,8 @@ router.get('/:id/payments', getStudentPayments);
 router
     .route('/:id')
     .get(getStudent)
-    .put(updateStudent);
+    .put(updateStudent)
+    .delete(deleteStudent);
+
 
 module.exports = router;

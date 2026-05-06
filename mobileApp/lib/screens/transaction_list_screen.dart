@@ -3,6 +3,8 @@ import '../theme/app_theme.dart';
 import '../widgets/status_chip.dart';
 import '../utils/api_service.dart';
 import 'student_fees_history_screen.dart';
+import '../utils/receipt_helper.dart';
+import 'package:intl/intl.dart';
 
 class TransactionListScreen extends StatefulWidget {
   const TransactionListScreen({super.key});
@@ -146,71 +148,94 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     final student = payment['student'] ?? {};
     final personal = student['personalDetails'] ?? {};
     final academic = student['academicDetails'] ?? {};
+    final parent = student['parentDetails'] ?? {};
     final name = personal['fullName'] ?? 'Unknown Student';
     final amount = payment['amount'] ?? 0;
     
     String dateStr = 'Unknown Date';
+    DateTime? paymentDate;
     if (payment['paymentDate'] != null) {
-      final date = DateTime.parse(payment['paymentDate']).toLocal();
-      dateStr = '${date.day}/${date.month}/${date.year}';
+      paymentDate = DateTime.parse(payment['paymentDate']).toLocal();
+      dateStr = '${paymentDate.day}/${paymentDate.month}/${paymentDate.year}';
     }
 
-    return InkWell(
-      onTap: () {
-        if (student['_id'] != null) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => StudentFeesHistoryScreen(
-                studentId: student['_id'],
-                studentName: name, 
-                studentRollId: student['studentId'] ?? '',
-              ),
-            ),
-          );
-        }
-      },
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: isDark ? AppTheme.surfaceDark : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: isDark ? Colors.white10 : AppTheme.primaryBlue.withOpacity(0.1),
-              child: Text(name.isNotEmpty ? name[0] : '?', style: TextStyle(color: isDark ? Colors.white : AppTheme.primaryBlue)),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isDark ? Colors.white : AppTheme.textPrimary),
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.surfaceDark : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            if (student['_id'] != null) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => StudentFeesHistoryScreen(
+                    studentId: student['_id'],
+                    studentName: name, 
+                    studentRollId: student['studentId'] ?? '',
                   ),
-                  Text(
-                    'Class ${academic['className'] ?? ''} • $dateStr', 
-                    style: TextStyle(color: isDark ? Colors.white70 : AppTheme.textSecondary, fontSize: 13),
-                  ),
-                ],
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  '₹$amount',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isDark ? Colors.white : AppTheme.textPrimary),
                 ),
-                StatusChip(label: payment['paymentMethod'] ?? 'Paid', color: AppTheme.successGreen),
+              );
+            }
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: isDark ? Colors.white10 : AppTheme.primaryBlue.withOpacity(0.1),
+                  child: Text(name.isNotEmpty ? name[0] : '?', style: TextStyle(color: isDark ? Colors.white : AppTheme.primaryBlue)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isDark ? Colors.white : AppTheme.textPrimary),
+                      ),
+                      Text(
+                        'Class ${academic['className'] ?? ''} • $dateStr', 
+                        style: TextStyle(color: isDark ? Colors.white70 : AppTheme.textSecondary, fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '₹$amount',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isDark ? Colors.white : AppTheme.textPrimary),
+                    ),
+                    const SizedBox(height: 4),
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          icon: const Icon(Icons.send_rounded, size: 16, color: Color(0xFF25D366)),
+                          onPressed: () {
+                            ReceiptHelper.sendWhatsAppMessage(
+                              parentName: parent['parentName'] ?? 'Parent',
+                              mobileNumber: parent['mobileNumber'] ?? '',
+                              studentName: name,
+                              amount: amount.toString(),
+                              month: paymentDate != null ? DateFormat('MMMM').format(paymentDate) : 'N/A',
+                              year: paymentDate != null ? paymentDate.year.toString() : 'N/A',
+                            );
+                          },
+                        ),
+                  ],
+                ),
               ],
             ),
-          ],
+          ),
         ),
       ),
     );

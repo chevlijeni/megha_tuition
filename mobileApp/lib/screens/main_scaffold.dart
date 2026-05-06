@@ -10,11 +10,17 @@ class MainScaffold extends StatefulWidget {
   const MainScaffold({super.key});
 
   @override
-  State<MainScaffold> createState() => _MainScaffoldState();
+  State<MainScaffold> createState() => MainScaffoldState();
 }
 
-class _MainScaffoldState extends State<MainScaffold> {
+class MainScaffoldState extends State<MainScaffold> {
   int _currentIndex = 0;
+
+  void switchTab(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
 
   final List<Widget> _screens = [
     const DashboardScreen(),

@@ -5,7 +5,7 @@ exports.createStudentValidate = [
     check('personalDetails.fullName', 'Full name is required').notEmpty(),
     check('personalDetails.gender', 'Gender must be Male, Female, or Other').isIn(['Male', 'Female', 'Other']),
     check('academicDetails.className', 'Class name is required').notEmpty(),
-    check('academicDetails.board', 'Board must be GSEB or CBSC').isIn(['GSEB', 'CBSC']),
+    check('academicDetails.board', 'Board must be GSEB, CBSC, or Gujarati Medium').isIn(['GSEB', 'CBSC', 'Gujarati Medium']),
     check('academicDetails.batchTime', 'Batch time must be Morning, Afternoon, or Evening').isIn(['Morning', 'Afternoon', 'Evening']),
     check('academicDetails.enrollmentDate', 'Enrollment date is required').notEmpty(),
     check('feeDetails.feeAmount', 'Fee amount is required and must be numeric').isNumeric(),

@@ -5,6 +5,7 @@ import '../widgets/status_chip.dart';
 import 'add_student_wizard.dart';
 import 'student_detail_screen.dart';
 import 'package:intl/intl.dart';
+import '../widgets/custom_snack_bar.dart';
 
 class StudentListScreen extends StatefulWidget {
   final bool showOnlyPending;
@@ -43,9 +44,7 @@ class _StudentListScreenState extends State<StudentListScreen> {
         if (result['success']) {
           _allStudents = result['data'];
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(result['message']), backgroundColor: AppTheme.errorRed),
-          );
+          CustomSnackBar.show(context, message: result['message'], isError: true);
         }
       });
     }
@@ -58,6 +57,10 @@ class _StudentListScreenState extends State<StudentListScreen> {
       
       final name = personal['fullName']?.toString().toLowerCase() ?? '';
       final id = student['studentId']?.toString().toLowerCase() ?? '';
+      final status = student['status'] ?? 'Active';
+      
+      // Filter out inactive students
+      if (status != 'Active') return false;
       
       final matchesSearch = name.contains(_searchQuery.toLowerCase()) ||
           id.contains(_searchQuery.toLowerCase());
@@ -98,11 +101,14 @@ class _StudentListScreenState extends State<StudentListScreen> {
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
                   icon: const Icon(Icons.person_add_alt_1_rounded, color: Colors.white, size: 22),
-                  onPressed: () {
-                    Navigator.push(
+                  onPressed: () async {
+                    final added = await Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => const AddStudentWizard()),
                     );
+                    if (added == true && mounted) {
+                      _fetchStudents(forceRefresh: true);
+                    }
                   },
                 ),
               ],
@@ -207,27 +213,41 @@ class _StudentListScreenState extends State<StudentListScreen> {
                   _buildDropdownFilter(
                     label: 'Board',
                     value: _selectedBoard,
-                    items: ['All', 'GSEB', 'CBSC'],
+                    items: ['All', 'GSEB', 'CBSC', 'Gujarti Medium'],
                     onChanged: (val) => setState(() => _selectedBoard = val!),
                   ),
                   const SizedBox(width: 8),
-                    FilterChip(
-                    label: Text(
-                      'Pending',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: _showPendingOnly ? Colors.white : (isDark ? Colors.white70 : AppTheme.textSecondary),
-                        fontWeight: _showPendingOnly ? FontWeight.bold : FontWeight.normal,
+                    InkWell(
+                      onTap: () => setState(() => _showPendingOnly = !_showPendingOnly),
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: _showPendingOnly ? AppTheme.errorRed : (isDark ? AppTheme.surfaceDark : Colors.white),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: _showPendingOnly ? AppTheme.errorRed : (isDark ? Colors.white10 : Colors.grey.shade200)),
+                          boxShadow: [
+                            if (_showPendingOnly)
+                              BoxShadow(
+                                color: AppTheme.errorRed.withOpacity(0.2),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
+                          ],
+                        ),
+                        child: Center(
+                          child: Text(
+                            'Pending',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: _showPendingOnly ? Colors.white : (isDark ? Colors.white70 : AppTheme.textSecondary),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
-                    selected: _showPendingOnly,
-                    onSelected: (val) => setState(() => _showPendingOnly = val),
-                    selectedColor: AppTheme.errorRed,
-                    checkmarkColor: Colors.white,
-                    backgroundColor: isDark ? AppTheme.surfaceDark : Colors.white,
-                    side: BorderSide(color: _showPendingOnly ? AppTheme.errorRed : (isDark ? Colors.white10 : Colors.grey.shade200)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
                 ],
               ),
             ),
@@ -313,6 +333,52 @@ class _StudentListScreenState extends State<StudentListScreen> {
           }).toList(),
         ),
       ),
+    );
+  }
+
+  void _showDeleteConfirmationDialog(BuildContext context, String mongoId, String name) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: isDark ? AppTheme.surfaceDark : Colors.white,
+          title: Text('Delete Student', style: TextStyle(color: isDark ? Colors.white : AppTheme.textPrimary)),
+          content: Text(
+            'Are you sure you want to delete $name?',
+            style: TextStyle(color: isDark ? Colors.white70 : AppTheme.textSecondary),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                setState(() => _isLoading = true);
+                final result = await ApiService.deleteStudent(mongoId);
+                if (mounted) {
+                  setState(() => _isLoading = false);
+                  if (result['success']) {
+                    CustomSnackBar.show(context, message: '$name deleted successfully');
+                    _fetchStudents(forceRefresh: true);
+                  } else {
+                    bool isWarning = result['message'].toString().contains('paid fees');
+                    CustomSnackBar.show(
+                      context, 
+                      message: result['message'], 
+                      isWarning: isWarning,
+                      isError: !isWarning,
+                    );
+                  }
+                }
+              },
+              child: const Text('Delete', style: TextStyle(color: AppTheme.errorRed, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -420,6 +486,17 @@ class _StudentListScreenState extends State<StudentListScreen> {
                   ),
                 ],
               ),
+              if (status == 'Active') ...[
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline_rounded, color: AppTheme.errorRed, size: 24),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  onPressed: () {
+                    _showDeleteConfirmationDialog(context, student['_id'], name);
+                  },
+                ),
+              ],
             ],
           ),
         ),
@@ -427,3 +504,4 @@ class _StudentListScreenState extends State<StudentListScreen> {
     );
   }
 }
+

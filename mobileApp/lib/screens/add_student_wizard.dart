@@ -6,6 +6,7 @@ import '../utils/api_service.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/cupertino.dart';
+import '../widgets/custom_snack_bar.dart';
 
 class AddStudentWizard extends StatefulWidget {
   final Map<String, dynamic>? initialData;
@@ -42,29 +43,10 @@ class _AddStudentWizardState extends State<AddStudentWizard> {
   String? _selectedBatchTime;
   String? _selectedBillCycle;
   final TextEditingController _schoolNameController = TextEditingController();
-  final TextEditingController _dueDateController = TextEditingController();
+  final TextEditingController _dueDateController = TextEditingController(text: '10');
   final TextEditingController _parentNameController = TextEditingController();
   final TextEditingController _mobileNumberController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
-
-  // Top error notification state
-  String? _topErrorMessage;
-  bool _isErrorVisible = false;
-  Timer? _errorTimer;
-
-  void _showTopError(String message) {
-    _errorTimer?.cancel();
-    setState(() {
-      _topErrorMessage = message;
-      _isErrorVisible = true;
-    });
-
-    _errorTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted) {
-        setState(() => _isErrorVisible = false);
-      }
-    });
-  }
 
   @override
   void initState() {
@@ -109,7 +91,6 @@ class _AddStudentWizardState extends State<AddStudentWizard> {
 
   @override
   void dispose() {
-    _errorTimer?.cancel();
     _fullNameController.dispose();
     _dobController.dispose();
     _enrollmentController.dispose();
@@ -123,7 +104,6 @@ class _AddStudentWizardState extends State<AddStudentWizard> {
     super.dispose();
   }
   
-  // Generic validation helper
   String? _requiredValidator(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'This field is required';
@@ -155,59 +135,6 @@ class _AddStudentWizardState extends State<AddStudentWizard> {
     }
   }
 
-  void _showDayPicker(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return Container(
-          height: 300,
-          color: Colors.white,
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  border: Border(bottom: BorderSide(color: Colors.grey[300]!)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancel'),
-                    ),
-                    const Text('Select Due Day', style: TextStyle(fontWeight: FontWeight.bold)),
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Done'),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: CupertinoPicker(
-                  itemExtent: 40,
-                  scrollController: FixedExtentScrollController(
-                    initialItem: (int.tryParse(_dueDateController.text) ?? 1) - 1,
-                  ),
-                  onSelectedItemChanged: (int index) {
-                    setState(() {
-                      _dueDateController.text = (index + 1).toString();
-                    });
-                  },
-                  children: List<Widget>.generate(31, (int index) {
-                    return Center(child: Text((index + 1).toString()));
-                  }),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   void _nextStep() {
     bool isValid = false;
     if (_currentStep == 0) {
@@ -232,10 +159,18 @@ class _AddStudentWizardState extends State<AddStudentWizard> {
     }
   }
 
+  void _backStep() {
+    if (_currentStep > 0) {
+      _pageController.previousPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
   Future<void> _saveStudent() async {
     setState(() => _isLoading = true);
 
-    // Format dates for backend
     DateTime? dob;
     if (_dobController.text.isNotEmpty) {
       try {
@@ -284,19 +219,12 @@ class _AddStudentWizardState extends State<AddStudentWizard> {
     setState(() => _isLoading = false);
 
     if (result['success']) {
-      _showSuccessDialog(_isEditMode ? 'Updated!' : 'Registered!', 
-        _isEditMode ? 'Student details updated successfully.' : 'New student has been registered successfully.');
+      CustomSnackBar.show(context, message: _isEditMode ? 'Student details updated successfully.' : 'New student registered successfully.');
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) Navigator.pop(context, true);
+      });
     } else {
-      _showTopError(result['message']);
-    }
-  }
-
-  void _backStep() {
-    if (_currentStep > 0) {
-      _pageController.previousPage(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      CustomSnackBar.show(context, message: result['message'], isError: true);
     }
   }
 
@@ -314,30 +242,25 @@ class _AddStudentWizardState extends State<AddStudentWizard> {
         ),
         elevation: 0,
       ),
-      body: Stack(
+      body: Column(
         children: [
-          Column(
-            children: [
-              _buildProgressIndicator(),
-              Expanded(
-                child: PageView(
-                  controller: _pageController,
-                  physics: const NeverScrollableScrollPhysics(),
-                  onPageChanged: (index) {
-                    setState(() => _currentStep = index);
-                  },
-                  children: [
-                    _buildStep(0, 'Personal Details', _buildPersonalStep()),
-                    _buildStep(1, 'Academic Details', _buildAcademicStep()),
-                    _buildStep(2, 'Fee Details', _buildFeeStep()),
-                    _buildStep(3, 'Parent Details', _buildParentStep()),
-                  ],
-                ),
-              ),
-              _buildNavigationButtons(),
-            ],
+          _buildProgressIndicator(),
+          Expanded(
+            child: PageView(
+              controller: _pageController,
+              physics: const NeverScrollableScrollPhysics(),
+              onPageChanged: (index) {
+                setState(() => _currentStep = index);
+              },
+              children: [
+                _buildStep(0, 'Personal Details', _buildPersonalStep()),
+                _buildStep(1, 'Academic Details', _buildAcademicStep()),
+                _buildStep(2, 'Fee Details', _buildFeeStep()),
+                _buildStep(3, 'Parent Details', _buildParentStep()),
+              ],
+            ),
           ),
-          _buildTopErrorNotification(),
+          _buildNavigationButtons(),
         ],
       ),
     );
@@ -400,6 +323,200 @@ class _AddStudentWizardState extends State<AddStudentWizard> {
     );
   }
 
+  Widget _buildSelectionField({
+    required String label,
+    required String? value,
+    required IconData icon,
+    required VoidCallback onTap,
+    String? Function(String?)? validator,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: isDark ? AppTheme.textSecondaryDark : AppTheme.textSecondary,
+            ),
+          ),
+        ),
+        InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            decoration: BoxDecoration(
+              color: isDark ? AppTheme.surfaceDark : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark ? Colors.white.withOpacity(0.05) : Colors.transparent,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(icon, size: 20, color: AppTheme.primaryBlue),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    value ?? 'Select $label',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: value != null ? FontWeight.bold : FontWeight.normal,
+                      color: value != null 
+                        ? (isDark ? Colors.white : AppTheme.textPrimary)
+                        : (isDark ? Colors.white38 : Colors.grey),
+                    ),
+                  ),
+                ),
+                const Icon(Icons.keyboard_arrow_down_rounded, color: AppTheme.textSecondary),
+              ],
+            ),
+          ),
+        ),
+        if (validator != null)
+          FormField<String>(
+            initialValue: value,
+            validator: validator,
+            builder: (state) {
+              if (state.hasError) {
+                return Padding(
+                  padding: const EdgeInsets.only(left: 16, top: 8),
+                  child: Text(
+                    state.errorText!,
+                    style: const TextStyle(color: AppTheme.errorRed, fontSize: 12),
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
+      ],
+    );
+  }
+
+  void _showSelectionSheet({
+    required String title,
+    required List<String> options,
+    required String? selectedValue,
+    required Function(String) onSelected,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.5,
+        decoration: BoxDecoration(
+          color: isDark ? AppTheme.backgroundDark : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 12),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2))),
+            const SizedBox(height: 20),
+            Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                itemCount: options.length,
+                separatorBuilder: (context, index) => Divider(color: Colors.grey.withOpacity(0.1)),
+                itemBuilder: (context, index) {
+                  final option = options[index];
+                  final isSelected = option == selectedValue;
+                  return ListTile(
+                    onTap: () {
+                      onSelected(option);
+                      Navigator.pop(context);
+                    },
+                    title: Text(
+                      option,
+                      style: TextStyle(
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected ? AppTheme.primaryBlue : (isDark ? Colors.white : Colors.black),
+                      ),
+                    ),
+                    trailing: isSelected 
+                      ? const Icon(Icons.check_circle_rounded, color: AppTheme.primaryBlue) 
+                      : null,
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showDayPicker(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Container(
+          height: 350,
+          decoration: BoxDecoration(
+            color: isDark ? AppTheme.backgroundDark : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+          ),
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+              Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.withOpacity(0.3), borderRadius: BorderRadius.circular(2))),
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                    ),
+                    const Text('Due Day of Month', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Done', style: TextStyle(color: AppTheme.primaryBlue, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: CupertinoPicker(
+                  itemExtent: 45,
+                  scrollController: FixedExtentScrollController(
+                    initialItem: (int.tryParse(_dueDateController.text) ?? 1) - 1,
+                  ),
+                  onSelectedItemChanged: (int index) {
+                    setState(() {
+                      _dueDateController.text = (index + 1).toString();
+                    });
+                  },
+                  children: List<Widget>.generate(31, (int index) {
+                    return Center(
+                      child: Text(
+                        (index + 1).toString(),
+                        style: TextStyle(color: isDark ? Colors.white : Colors.black, fontSize: 20),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildPersonalStep() {
     return Form(
       key: _step1Key,
@@ -411,28 +528,28 @@ class _AddStudentWizardState extends State<AddStudentWizard> {
             decoration: const InputDecoration(labelText: 'Full Name'),
             validator: _requiredValidator,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           TextFormField(
             controller: _dobController,
             readOnly: true,
             onTap: () => _selectDate(context, _dobController),
             decoration: const InputDecoration(
               labelText: 'Date of Birth (Optional)',
-              suffixIcon: Icon(Icons.calendar_today, size: 18),
+              suffixIcon: Icon(Icons.calendar_today_rounded, size: 18),
             ),
           ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
+          const SizedBox(height: 24),
+          _buildSelectionField(
+            label: 'Gender',
             value: _selectedGender,
-            decoration: const InputDecoration(labelText: 'Gender'),
-            items: ['Male', 'Female', 'Other'].map((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value),
-              );
-            }).toList(),
-            onChanged: (val) => setState(() => _selectedGender = val),
-            validator: (value) => value == null ? 'Please select gender' : null,
+            icon: Icons.person_outline_rounded,
+            onTap: () => _showSelectionSheet(
+              title: 'Select Gender',
+              options: ['Male', 'Female', 'Other'],
+              selectedValue: _selectedGender,
+              onSelected: (val) => setState(() => _selectedGender = val),
+            ),
+            validator: (value) => _selectedGender == null ? 'Please select gender' : null,
           ),
         ],
       ),
@@ -445,50 +562,57 @@ class _AddStudentWizardState extends State<AddStudentWizard> {
       autovalidateMode: AutovalidateMode.onUserInteraction,
       child: Column(
         children: [
-            DropdownButtonFormField<String>(
+          _buildSelectionField(
+            label: 'Class',
             value: _selectedClass,
-            decoration: const InputDecoration(labelText: 'Class'),
-            items: [
-              'Pre Primary',
-              ...List.generate(9, (i) => 'Grade ${i + 1}')
-            ].map((String value) {
-              return DropdownMenuItem<String>(value: value, child: Text(value));
-            }).toList(),
-            onChanged: (val) => setState(() => _selectedClass = val),
-            validator: _requiredValidator,
+            icon: Icons.school_outlined,
+            onTap: () => _showSelectionSheet(
+              title: 'Select Class',
+              options: ['Pre Primary', ...List.generate(12, (i) => 'Grade ${i + 1}')],
+              selectedValue: _selectedClass,
+              onSelected: (val) => setState(() => _selectedClass = val),
+            ),
+            validator: (value) => _selectedClass == null ? 'Please select class' : null,
           ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
+          const SizedBox(height: 24),
+          _buildSelectionField(
+            label: 'Board',
             value: _selectedBoard,
-            decoration: const InputDecoration(labelText: 'Board'),
-            items: ['GSEB', 'CBSC'].map((String value) {
-              return DropdownMenuItem<String>(value: value, child: Text(value));
-            }).toList(),
-            onChanged: (val) => setState(() => _selectedBoard = val),
-            validator: _requiredValidator,
+            icon: Icons.assignment_outlined,
+            onTap: () => _showSelectionSheet(
+              title: 'Select Board',
+              options: ['GSEB', 'CBSC', 'Gujarati Medium', 'Other'],
+              selectedValue: _selectedBoard,
+              onSelected: (val) => setState(() => _selectedBoard = val),
+            ),
+            validator: (value) => _selectedBoard == null ? 'Please select board' : null,
           ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
+          const SizedBox(height: 24),
+          _buildSelectionField(
+            label: 'Batch Time',
             value: _selectedBatchTime,
-            decoration: const InputDecoration(labelText: 'Batch Time'),
-            items: ['Morning', 'Afternoon', 'Evening'].map((String value) {
-              return DropdownMenuItem<String>(value: value, child: Text(value));
-            }).toList(),
-            onChanged: (val) => setState(() => _selectedBatchTime = val),
-            validator: _requiredValidator,
+            icon: Icons.access_time_rounded,
+            onTap: () => _showSelectionSheet(
+              title: 'Select Batch Time',
+              options: ['Morning', 'Afternoon', 'Evening'],
+              selectedValue: _selectedBatchTime,
+              onSelected: (val) => setState(() => _selectedBatchTime = val),
+            ),
+            validator: (value) => _selectedBatchTime == null ? 'Please select batch' : null,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           TextFormField(
             controller: _schoolNameController,
             decoration: const InputDecoration(labelText: 'School Name (Optional)'),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           TextFormField(
             controller: _enrollmentController,
             readOnly: true,
+            onTap: () => _selectDate(context, _enrollmentController),
             decoration: const InputDecoration(
               labelText: 'Enrollment Date',
-              suffixIcon: Icon(Icons.calendar_today, size: 18),
+              suffixIcon: Icon(Icons.calendar_today_rounded, size: 18),
             ),
           ),
         ],
@@ -505,33 +629,30 @@ class _AddStudentWizardState extends State<AddStudentWizard> {
           TextFormField(
             controller: _feeAmountController,
             keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(7),
-            ],
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(7)],
             decoration: const InputDecoration(labelText: 'Fee Amount', prefixText: '₹ '),
             validator: _requiredValidator,
           ),
-          const SizedBox(height: 16),
-          TextFormField(
-            controller: _dueDateController,
-            readOnly: true,
+          const SizedBox(height: 24),
+          _buildSelectionField(
+            label: 'Due Day of Every Month',
+            value: _dueDateController.text.isNotEmpty ? 'Day ${_dueDateController.text}' : null,
+            icon: Icons.calendar_month_outlined,
             onTap: () => _showDayPicker(context),
-            decoration: const InputDecoration(
-              labelText: 'Due days of every month',
-              suffixIcon: Icon(Icons.unfold_more, size: 18),
-            ),
-            validator: _requiredValidator,
+            validator: (value) => _dueDateController.text.isEmpty ? 'Required' : null,
           ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
+          const SizedBox(height: 24),
+          _buildSelectionField(
+            label: 'Bill Cycle',
             value: _selectedBillCycle,
-            decoration: const InputDecoration(labelText: 'Bill Cycle'),
-            items: ['Monthly', 'Quarterly', 'Yearly'].map((String value) {
-              return DropdownMenuItem<String>(value: value, child: Text(value));
-            }).toList(),
-            onChanged: (val) => setState(() => _selectedBillCycle = val),
-            validator: _requiredValidator,
+            icon: Icons.repeat_rounded,
+            onTap: () => _showSelectionSheet(
+              title: 'Select Bill Cycle',
+              options: ['Monthly', 'Quarterly', 'Half-Yearly', 'Yearly'],
+              selectedValue: _selectedBillCycle,
+              onSelected: (val) => setState(() => _selectedBillCycle = val),
+            ),
+            validator: (value) => _selectedBillCycle == null ? 'Please select bill cycle' : null,
           ),
         ],
       ),
@@ -549,7 +670,7 @@ class _AddStudentWizardState extends State<AddStudentWizard> {
             decoration: const InputDecoration(labelText: 'Parent/Guardian Name'),
             validator: _requiredValidator,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           TextFormField(
             controller: _mobileNumberController,
             keyboardType: TextInputType.phone,
@@ -561,7 +682,7 @@ class _AddStudentWizardState extends State<AddStudentWizard> {
               return null;
             },
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           TextFormField(
             controller: _addressController,
             maxLines: 2,
@@ -573,17 +694,20 @@ class _AddStudentWizardState extends State<AddStudentWizard> {
   }
 
   Widget _buildNavigationButtons() {
-    return Padding(
+    return Container(
       padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5)),
+        ],
+      ),
       child: Row(
         children: [
           if (_currentStep > 0)
             Expanded(
               child: OutlinedButton(
                 onPressed: _backStep,
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size(0, 50),
-                ),
                 child: const Text('Back'),
               ),
             ),
@@ -591,109 +715,12 @@ class _AddStudentWizardState extends State<AddStudentWizard> {
           Expanded(
             child: ElevatedButton(
               onPressed: _isLoading ? null : _nextStep,
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(0, 50),
-              ),
               child: _isLoading 
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
+                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : Text(_currentStep < 3 ? 'Next' : (_isEditMode ? 'Update Student' : 'Register Student')),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  void _showSuccessDialog(String title, String message) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.check_circle, color: Colors.green, size: 80),
-            const SizedBox(height: 24),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: AppTheme.textSecondary),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context); // Close dialog
-                Navigator.pop(context); // Close wizard
-              },
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50),
-              ),
-              child: const Text('Done'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTopErrorNotification() {
-    return AnimatedPositioned(
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeOutBack,
-      top: _isErrorVisible ? 20 : -100,
-      left: 20,
-      right: 20,
-      child: SafeArea(
-        child: Material(
-          color: Colors.transparent,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                decoration: BoxDecoration(
-                  color: AppTheme.errorRed.withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Colors.white24,
-                    width: 1.5,
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.error_outline_rounded,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Text(
-                        _topErrorMessage ?? '',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }

@@ -3,8 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  static const String baseUrl = 'https://megha-tuition.onrender.com/api/v1';
-  // static const String baseUrl = 'http://localhost:5000/api/v1';
+  // static const String baseUrl = 'https://megha-tuition.onrender.com/api/v1';
+  static const String baseUrl = 'http://localhost:5000/api/v1';
 
   // Persistent client for connection pooling (reduces TLS handshake overhead)
   static final http.Client _client = http.Client();
@@ -101,6 +101,7 @@ class ApiService {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 201) {
+        _cachedHomeData = null; // Invalidate cache so next sync gets fresh data
         return {'success': true, 'message': data['message'] ?? 'Student created successfully'};
       } else {
         return {
@@ -262,6 +263,7 @@ class ApiService {
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
+        _cachedHomeData = null; // Invalidate cache so next sync gets fresh data
         return {
           'success': true, 
           'message': data['message'] ?? 'Updated successfully',
@@ -519,4 +521,42 @@ class ApiService {
       };
     }
   }
+  // Delete student and associated payments
+  static Future<Map<String, dynamic>> deleteStudent(String studentId) async {
+    try {
+      final token = await getToken();
+      if (token == null) {
+        return {'success': false, 'message': 'No authentication token found'};
+      }
+
+      final response = await _client.delete(
+        Uri.parse('$baseUrl/students/$studentId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      ).timeout(_timeout);
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        _cachedHomeData = null; // Invalidate cache so next sync gets fresh data
+        return {
+          'success': true, 
+          'message': data['message'] ?? 'Deleted successfully',
+        };
+      } else {
+        return {
+          'success': false,
+          'message': data['message'] ?? 'Failed to delete student'
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Connectivity problem. Please check if the server is running.'
+      };
+    }
+  }
 }
+
