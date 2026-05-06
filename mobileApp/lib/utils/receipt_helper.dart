@@ -44,20 +44,29 @@ class ReceiptHelper {
     final waUrl = 'https://wa.me/$cleanNumber?text=$message';
 
     try {
-      // platformDefault is often more reliable on iOS browsers for universal links
+      // webOnlyWindowName: '_top' is critical for iOS Chrome and PWA to bypass popup blockers
       await launchUrl(
         Uri.parse(waUrl),
         mode: LaunchMode.platformDefault,
+        webOnlyWindowName: '_top',
       );
     } catch (e) {
       // If that fails, try the absolute direct app scheme
       final appScheme = 'whatsapp://send?phone=$cleanNumber&text=$message';
       try {
-        await launchUrl(Uri.parse(appScheme), mode: LaunchMode.externalApplication);
+        await launchUrl(
+          Uri.parse(appScheme), 
+          mode: LaunchMode.externalApplication,
+          webOnlyWindowName: '_top',
+        );
       } catch (e2) {
         // Final fallback to api link
         final apiFallback = 'https://api.whatsapp.com/send?phone=$cleanNumber&text=$message';
-        await launchUrl(Uri.parse(apiFallback), mode: LaunchMode.platformDefault);
+        await launchUrl(
+          Uri.parse(apiFallback), 
+          mode: LaunchMode.platformDefault,
+          webOnlyWindowName: '_top',
+        );
       }
     }
   }
