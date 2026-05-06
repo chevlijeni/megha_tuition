@@ -40,20 +40,34 @@ class ReceiptHelper {
       year: year,
     ));
 
-    // Using api.whatsapp.com for better universal linking across mobile browsers and PWAs
-    final url = 'https://api.whatsapp.com/send?phone=$cleanNumber&text=$message';
+    // Try multiple URL schemes for maximum compatibility on iOS/Web/Android
+    // Scheme 1: Universal Link (wa.me) - Most reliable for Web/iOS
+    final waMeUrl = 'https://wa.me/$cleanNumber?text=$message';
+    // Scheme 2: API Link (api.whatsapp.com)
+    final apiUrls = 'https://api.whatsapp.com/send?phone=$cleanNumber&text=$message';
+    // Scheme 3: Direct App Scheme (whatsapp://) - Best for installed app on mobile
+    final appScheme = 'whatsapp://send?phone=$cleanNumber&text=$message';
 
     try {
-      if (await canLaunchUrl(Uri.parse(url))) {
+      // On Web/Mobile, we try wa.me first as it handles redirection best
+      await launchUrl(
+        Uri.parse(waMeUrl),
+        mode: LaunchMode.externalApplication,
+      );
+    } catch (e) {
+      try {
+        // Fallback to app scheme
         await launchUrl(
-          Uri.parse(url),
+          Uri.parse(appScheme),
           mode: LaunchMode.externalApplication,
         );
+      } catch (e2) {
+        // Final fallback to standard platform default
+        await launchUrl(
+          Uri.parse(apiUrls),
+          mode: LaunchMode.platformDefault,
+        );
       }
-    } catch (e) {
-      // Fallback
-      final fallbackUrl = 'https://wa.me/$cleanNumber?text=$message';
-      await launchUrl(Uri.parse(fallbackUrl), mode: LaunchMode.platformDefault);
     }
   }
 
