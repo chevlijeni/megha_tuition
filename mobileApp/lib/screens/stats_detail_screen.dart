@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 import '../utils/api_service.dart';
+import '../utils/receipt_helper.dart';
 import '../widgets/status_chip.dart';
 import 'package:intl/intl.dart';
 import 'student_detail_screen.dart';
@@ -179,22 +180,52 @@ class _StatsDetailScreenState extends State<StatsDetailScreen> {
           '${academic['className'] ?? ''} • ${academic['batchTime'] ?? ''}',
           style: isDark ? GoogleFonts.outfit(color: Colors.white60, fontSize: 12) : const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
         ),
-        trailing: SizedBox(
-          height: 48,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '₹$amount',
-                style: isDark ? GoogleFonts.outfit(fontWeight: FontWeight.w900, color: AppTheme.accentBlue, fontSize: 15) : TextStyle(fontWeight: FontWeight.bold, color: widget.themeColor, fontSize: 13),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (student['isPaidCurrentMonth'] != true) ...[
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                icon: const Icon(Icons.send_rounded, color: Color(0xFF25D366), size: 20),
+                onPressed: () {
+                  final now = DateTime.now();
+                  final months = [
+                    'January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'
+                  ];
+                  final monthName = months[now.month - 1];
+                  ReceiptHelper.sendWhatsAppReminder(
+                    parentName: student['parentDetails']?['parentName'] ?? 'Parent',
+                    mobileNumber: student['parentDetails']?['mobileNumber'] ?? '',
+                    studentName: name,
+                    amount: amount.toString(),
+                    month: monthName,
+                    year: now.year.toString(),
+                  );
+                },
               ),
-              StatusChip(
-                label: student['isPaidCurrentMonth'] == true ? 'Paid' : 'Pending',
-                color: student['isPaidCurrentMonth'] == true ? AppTheme.successGreen : AppTheme.errorRed,
-              ),
+              const SizedBox(width: 8),
             ],
-          ),
+            SizedBox(
+              height: 48,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '₹$amount',
+                    style: isDark ? GoogleFonts.outfit(fontWeight: FontWeight.w900, color: AppTheme.accentBlue, fontSize: 15) : TextStyle(fontWeight: FontWeight.bold, color: widget.themeColor, fontSize: 13),
+                  ),
+                  StatusChip(
+                    label: student['isPaidCurrentMonth'] == true ? 'Paid' : 'Pending',
+                    color: student['isPaidCurrentMonth'] == true ? AppTheme.successGreen : AppTheme.errorRed,
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
         onTap: () {
           Navigator.push(

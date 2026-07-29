@@ -114,4 +114,66 @@ class ReceiptHelper {
     
     await Share.share(message);
   }
+
+  static String getReminderMessage({
+    required String parentName,
+    required String studentName,
+    required String amount,
+    required String month,
+    required String year,
+  }) {
+    return '*PENDING FEE REMINDER - MEGHA TUITION CLASSES*\n\n'
+           'Hi *$parentName*,\n'
+           'This is a gentle reminder that the tuition fee of *Rs. $amount* for *$studentName* for the month of *$month $year* is currently pending.\n\n'
+           'Please clear it at your earliest convenience. If already paid, please ignore this message.\n\n'
+           'Regards,\n*Megha Chevli*';
+  }
+
+  static Future<void> sendWhatsAppReminder({
+    required String parentName,
+    required String mobileNumber,
+    required String studentName,
+    required String amount,
+    required String month,
+    required String year,
+  }) async {
+    String cleanNumber = mobileNumber.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleanNumber.length == 10) {
+      cleanNumber = '91$cleanNumber';
+    }
+
+    final message = Uri.encodeComponent(getReminderMessage(
+      parentName: parentName,
+      studentName: studentName,
+      amount: amount,
+      month: month,
+      year: year,
+    ));
+
+    final waUrl = 'https://wa.me/$cleanNumber?text=$message';
+
+    try {
+      await launchUrl(
+        Uri.parse(waUrl),
+        mode: LaunchMode.platformDefault,
+        webOnlyWindowName: '_top',
+      );
+    } catch (e) {
+      final appScheme = 'whatsapp://send?phone=$cleanNumber&text=$message';
+      try {
+        await launchUrl(
+          Uri.parse(appScheme), 
+          mode: LaunchMode.externalApplication,
+          webOnlyWindowName: '_top',
+        );
+      } catch (e2) {
+        final apiFallback = 'https://api.whatsapp.com/send?phone=$cleanNumber&text=$message';
+        await launchUrl(
+          Uri.parse(apiFallback), 
+          mode: LaunchMode.platformDefault,
+          webOnlyWindowName: '_top',
+        );
+      }
+    }
+  }
 }
