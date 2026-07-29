@@ -104,12 +104,22 @@ class _StudentFeesHistoryScreenState extends State<StudentFeesHistoryScreen> {
     );
   }
 
+  DateTime? _parseDate(dynamic val) {
+    if (val == null) return null;
+    if (val is String) {
+      try { return DateTime.parse(val).toLocal(); } catch (_) { return null; }
+    }
+    if (val is int) return DateTime.fromMillisecondsSinceEpoch(val).toLocal();
+    try { return (val as dynamic).toDate().toLocal(); } catch (_) { return null; }
+  }
+
   Widget _buildPaymentCard(dynamic payment) {
-    final date = DateTime.parse(payment['paymentDate']).toLocal();
-    final dateStr = DateFormat('dd MMM yyyy').format(date);
-    final amount = payment['amount'] ?? 0;
-    final month = _getMonthName(payment['month']);
-    final year = payment['year'];
+    final date = _parseDate(payment['paymentDate'] ?? payment['createdAt']);
+    final dateStr = date != null ? DateFormat('dd MMM yyyy').format(date) : 'Recent';
+    final amount = payment['amount'] ?? payment['amountPaid'] ?? 0;
+    final monthVal = payment['month'] ?? (date != null ? date.month : DateTime.now().month);
+    final month = _getMonthName(monthVal);
+    final year = payment['year'] ?? (date != null ? date.year : DateTime.now().year);
     final method = payment['paymentMethod'] ?? 'Cash';
     final receipt = payment['receiptNumber'] ?? 'N/A';
 
@@ -168,41 +178,21 @@ class _StudentFeesHistoryScreenState extends State<StudentFeesHistoryScreen> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        IconButton(
-                          visualDensity: VisualDensity.compact,
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          icon: Icon(Icons.share_rounded, size: 18, color: isDark ? AppTheme.accentBlue : AppTheme.primaryBlue),
-                          onPressed: () {
-                            ReceiptHelper.shareReceipt(
-                              parentName: _student?['parentDetails']?['parentName'] ?? 'Parent',
-                              studentName: widget.studentName,
-                              amount: amount.toString(),
-                              month: month,
-                              year: year.toString(),
-                            );
-                          },
-                        ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          visualDensity: VisualDensity.compact,
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          icon: const Icon(Icons.send_rounded, size: 18, color: Color(0xFF25D366)),
-                          onPressed: () {
-                            ReceiptHelper.sendWhatsAppMessage(
-                              parentName: _student?['parentDetails']?['parentName'] ?? 'Parent',
-                              mobileNumber: _student?['parentDetails']?['mobileNumber'] ?? '',
-                              studentName: widget.studentName,
-                              amount: amount.toString(),
-                              month: month,
-                              year: year.toString(),
-                            );
-                          },
-                        ),
-                      ],
+                    IconButton(
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      icon: const Icon(Icons.send_rounded, size: 18, color: Color(0xFF25D366)),
+                      onPressed: () {
+                        ReceiptHelper.sendWhatsAppMessage(
+                          parentName: _student?['parentDetails']?['parentName'] ?? 'Parent',
+                          mobileNumber: _student?['parentDetails']?['mobileNumber'] ?? '',
+                          studentName: widget.studentName,
+                          amount: amount.toString(),
+                          month: month,
+                          year: year.toString(),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -239,7 +229,11 @@ class _StudentFeesHistoryScreenState extends State<StudentFeesHistoryScreen> {
     );
   }
 
-  String _getMonthName(int month) {
-    return DateFormat('MMMM').format(DateTime(2022, month));
+  String _getMonthName(dynamic month) {
+    if (month == null) return DateFormat('MMMM').format(DateTime.now());
+    if (month is int) {
+      try { return DateFormat('MMMM').format(DateTime(2022, month)); } catch (_) {}
+    }
+    return month.toString();
   }
 }

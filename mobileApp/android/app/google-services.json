@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "555662726251",
+    "project_id": "megha-tuition",
+    "storage_bucket": "megha-tuition.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:555662726251:android:47b01e7dfa56c26b4e0d2e",
+        "android_client_info": {
+          "package_name": "com.example.meghatuition.megha_tuition"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA2oUcM-UWwS-XVGdG697QJed17nXdWlcs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

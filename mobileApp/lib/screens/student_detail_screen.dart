@@ -36,10 +36,13 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
   void _loadFromCache() {
     final cache = ApiService.allHomeData;
     if (cache != null && cache['students'] != null) {
-      final cachedStudent = (cache['students'] as List).firstWhere(
-        (s) => s['_id'] == widget.mongoId,
-        orElse: () => null,
-      );
+      Map<String, dynamic>? cachedStudent;
+      for (var s in cache['students']) {
+        if (s is Map && s['_id'] == widget.mongoId) {
+          cachedStudent = Map<String, dynamic>.from(s);
+          break;
+        }
+      }
       if (cachedStudent != null) {
         setState(() {
           _studentData = cachedStudent;
@@ -226,7 +229,9 @@ class _StudentDetailScreenState extends State<StudentDetailScreen> {
             radius: 50,
             backgroundColor: isDark ? Colors.white10 : Colors.white,
             child: Text(
-              widget.studentName.split(' ').map((e) => e[0]).join(''),
+              widget.studentName.trim().isNotEmpty
+                  ? widget.studentName.trim().split(' ').where((e) => e.isNotEmpty).map((e) => e[0]).take(2).join('').toUpperCase()
+                  : '?',
               style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: isDark ? Colors.white : AppTheme.primaryBlue),
             ),
           ),

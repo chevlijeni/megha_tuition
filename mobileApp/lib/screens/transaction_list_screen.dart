@@ -144,21 +144,38 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
     );
   }
 
+  DateTime? _parseDate(dynamic val) {
+    if (val == null) return null;
+    if (val is String) {
+      try {
+        return DateTime.parse(val).toLocal();
+      } catch (_) {
+        return null;
+      }
+    }
+    if (val is int) {
+      return DateTime.fromMillisecondsSinceEpoch(val).toLocal();
+    }
+    try {
+      return (val as dynamic).toDate().toLocal();
+    } catch (_) {
+      return null;
+    }
+  }
+
   Widget _buildTransactionItem(BuildContext context, dynamic payment) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final student = payment['student'] ?? {};
     final personal = student['personalDetails'] ?? {};
     final academic = student['academicDetails'] ?? {};
     final parent = student['parentDetails'] ?? {};
-    final name = personal['fullName'] ?? 'Unknown Student';
-    final amount = payment['amount'] ?? 0;
-    
-    String dateStr = 'Unknown Date';
-    DateTime? paymentDate;
-    if (payment['paymentDate'] != null) {
-      paymentDate = DateTime.parse(payment['paymentDate']).toLocal();
-      dateStr = '${paymentDate.day}/${paymentDate.month}/${paymentDate.year}';
-    }
+    final name = (personal['fullName'] ?? payment['studentName'] ?? payment['name'] ?? 'Student').toString();
+    final amount = payment['amount'] ?? payment['amountPaid'] ?? 0;
+
+    final paymentDate = _parseDate(payment['paymentDate'] ?? payment['createdAt']);
+    final dateStr = paymentDate != null
+        ? '${paymentDate.day}/${paymentDate.month}/${paymentDate.year}'
+        : 'Recent';
 
     return Container(
       decoration: BoxDecoration(
@@ -216,23 +233,21 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: isDark ? Colors.white : AppTheme.textPrimary),
                     ),
                     const SizedBox(height: 4),
-                        Link(
-                          uri: Uri.parse(ReceiptHelper.getWhatsAppUrl(
-                            parentName: parent['parentName'] ?? 'Parent',
-                            mobileNumber: parent['mobileNumber'] ?? '',
-                            studentName: name,
-                            amount: amount.toString(),
-                            month: paymentDate != null ? DateFormat('MMMM').format(paymentDate) : 'N/A',
-                            year: paymentDate != null ? paymentDate.year.toString() : 'N/A',
-                          )),
-                          target: LinkTarget.blank,
-                          builder: (context, followLink) => IconButton(
-                            visualDensity: VisualDensity.compact,
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                            icon: const Icon(Icons.send_rounded, size: 16, color: Color(0xFF25D366)),
-                            onPressed: followLink,
-                          ),
+                        IconButton(
+                          visualDensity: VisualDensity.compact,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          icon: const Icon(Icons.send_rounded, size: 16, color: Color(0xFF25D366)),
+                          onPressed: () {
+                            ReceiptHelper.sendWhatsAppMessage(
+                              parentName: parent['parentName'] ?? 'Parent',
+                              mobileNumber: parent['mobileNumber'] ?? '',
+                              studentName: name,
+                              amount: amount.toString(),
+                              month: paymentDate != null ? DateFormat('MMMM').format(paymentDate) : 'N/A',
+                              year: paymentDate != null ? paymentDate.year.toString() : 'N/A',
+                            );
+                          },
                         ),
                   ],
                 ),

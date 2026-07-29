@@ -1,16 +1,42 @@
 {
-    "hosting": {
-        "public": "build/web",
-        "ignore": [
-            "firebase.json",
-            "**/.*",
-            "**/node_modules/**"
-        ],
-        "rewrites": [
-            {
-                "source": "**",
-                "destination": "/index.html"
-            }
-        ]
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "megha-tuition",
+          "appId": "1:555662726251:android:47b01e7dfa56c26b4e0d2e",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "megha-tuition",
+          "configurations": {
+            "android": "1:555662726251:android:47b01e7dfa56c26b4e0d2e",
+            "ios": "1:555662726251:ios:a2c124c5c31ee0774e0d2e",
+            "macos": "1:555662726251:ios:a2c124c5c31ee0774e0d2e",
+            "web": "1:555662726251:web:692319ebe2d1db534e0d2e",
+            "windows": "1:555662726251:web:02181cf7d032d2634e0d2e"
+          }
+        }
+      }
     }
+  }
 }

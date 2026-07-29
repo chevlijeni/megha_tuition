@@ -33,19 +33,52 @@ class _StatsDetailScreenState extends State<StatsDetailScreen> {
     _loadData();
   }
 
-  void _loadData() {
-    final cache = ApiService.allHomeData;
-    if (cache == null) return;
-
-    setState(() {
-      if (widget.type == 'Students' || widget.type == 'Fees') {
-        _data = cache['students'] ?? [];
-      } else if (widget.type == 'Collections') {
-        _data = cache['payments'] ?? [];
-      } else if (widget.type == 'Pending') {
-        _data = (cache['students'] as List? ?? []).where((s) => s['isPaidCurrentMonth'] == false).toList();
+  DateTime? _parseDate(dynamic val) {
+    if (val == null) return null;
+    if (val is String) {
+      try {
+        return DateTime.parse(val).toLocal();
+      } catch (_) {
+        return null;
       }
-    });
+    }
+    if (val is int) {
+      return DateTime.fromMillisecondsSinceEpoch(val).toLocal();
+    }
+    try {
+      return (val as dynamic).toDate().toLocal();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _loadData() async {
+    final cache = ApiService.allHomeData;
+    if (cache != null) {
+      _applyDataFromBundle(cache);
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    final res = await ApiService.getSyncData();
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+        if (res['success']) {
+          _applyDataFromBundle(res['data']);
+        }
+      });
+    }
+  }
+
+  void _applyDataFromBundle(Map<String, dynamic> bundle) {
+    if (widget.type == 'Students' || widget.type == 'Fees') {
+      _data = bundle['students'] ?? [];
+    } else if (widget.type == 'Collections') {
+      _data = bundle['payments'] ?? [];
+    } else if (widget.type == 'Pending') {
+      _data = (bundle['students'] as List? ?? []).where((s) => s['isPaidCurrentMonth'] != true).toList();
+    }
   }
 
   @override
@@ -182,9 +215,10 @@ class _StatsDetailScreenState extends State<StatsDetailScreen> {
   Widget _buildCollectionItem(dynamic payment, int index) {
     final student = payment['student'] ?? {};
     final personal = student['personalDetails'] ?? {};
-    final name = personal['fullName'] ?? 'Unknown';
-    final amount = payment['amount'] ?? 0;
-    final date = DateTime.parse(payment['paymentDate']).toLocal();
+    final name = (personal['fullName'] ?? payment['studentName'] ?? payment['name'] ?? 'Student').toString();
+    final amount = payment['amount'] ?? payment['amountPaid'] ?? 0;
+    final date = _parseDate(payment['paymentDate'] ?? payment['createdAt']);
+    final dateStr = date != null ? DateFormat('dd MMM').format(date) : 'Recent';
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
@@ -212,7 +246,7 @@ class _StatsDetailScreenState extends State<StatsDetailScreen> {
           style: isDark ? GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white) : const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         subtitle: Text(
-          '${DateFormat('dd MMM').format(date)} • ${payment['paymentMethod'] ?? 'Cash'}',
+          '$dateStr • ${payment['paymentMethod'] ?? 'Cash'}',
           style: isDark ? GoogleFonts.outfit(color: Colors.white60, fontSize: 13) : const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
         ),
         trailing: Text(

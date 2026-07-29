@@ -196,10 +196,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
       final year = date.year;
       
       // Find if we have real data for this month
-      final realData = earningsData.firstWhere(
-        (e) => e['_id']['month'] == month && e['_id']['year'] == year,
-        orElse: () => null,
-      );
+      dynamic realData;
+      for (var e in earningsData) {
+        if (e is Map && e['_id'] is Map && e['_id']['month'] == month && e['_id']['year'] == year) {
+          realData = e;
+          break;
+        }
+      }
       
       displayStats.add({
         'month': month,

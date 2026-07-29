@@ -5,8 +5,8 @@ const axios = require('axios');
  */
 class WhatsAppService {
   static async sendFeeConfirmation({ parentName, mobileNumber, studentName, amount, month, year }) {
-    const instanceId = process.env.ULTRAMSG_INSTANCE_ID || 'instance171629';
-    const token = process.env.ULTRAMSG_TOKEN || 'z5kmg8e3ft1pnqxa';
+    const instanceId = process.env.ULTRAMSG_INSTANCE_ID;
+    const token = process.env.ULTRAMSG_TOKEN;
 
     if (!instanceId || !token) {
       console.warn('[WhatsApp] Credentials missing in .env. Skipping notification.');

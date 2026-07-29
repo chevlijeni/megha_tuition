@@ -30,6 +30,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _fetchDashboardData();
   }
 
+  DateTime? _parseDate(dynamic val) {
+    if (val == null) return null;
+    if (val is String) {
+      try { return DateTime.parse(val).toLocal(); } catch (_) { return null; }
+    }
+    if (val is int) return DateTime.fromMillisecondsSinceEpoch(val).toLocal();
+    try { return (val as dynamic).toDate().toLocal(); } catch (_) { return null; }
+  }
+
   Future<void> _fetchDashboardData({bool forceRefresh = false}) async {
     setState(() => _isLoading = !forceRefresh && _stats == null);
     
@@ -41,18 +50,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
         if (result['success']) {
           _stats = result['data']['stats'];
           
-          // Filter for current month's transactions and take last 5
           final now = DateTime.now();
           final allPayments = (result['data']['payments'] as List? ?? []);
+
           _recentPayments = allPayments.where((p) {
-            if (p['paymentDate'] == null) return false;
-            try {
-              final date = DateTime.parse(p['paymentDate']).toLocal();
-              return date.month == now.month && date.year == now.year;
-            } catch (e) {
-              return false;
-            }
+            final date = _parseDate(p['paymentDate'] ?? p['createdAt']);
+            if (date == null) return true;
+            return date.month == now.month && date.year == now.year;
           }).take(5).toList();
+
+          if (_recentPayments.isEmpty && allPayments.isNotEmpty) {
+            _recentPayments = allPayments.take(5).toList();
+          }
         }
         _isLoading = false;
       });
@@ -160,7 +169,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   StatCard(
                     title: 'Total Fees',
-                    value: '₹${NumberFormat('#,##,000').format(_stats?['totalFees'] ?? 0)}',
+                    value: '₹${NumberFormat('#,##,##0').format(_stats?['totalFees'] ?? 0)}',
                     icon: Icons.assignment_rounded,
                     iconColor: AppTheme.warningYellow,
                     gradient: isDark ? null : const LinearGradient(
@@ -172,7 +181,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   StatCard(
                     title: 'Pending Fees',
-                    value: '₹${NumberFormat('#,##,000').format(_stats?['pendingFees'] ?? 0)}',
+                    value: '₹${NumberFormat('#,##,##0').format(_stats?['pendingFees'] ?? 0)}',
                     icon: Icons.account_balance_wallet_rounded,
                     iconColor: AppTheme.errorRed,
                     gradient: isDark ? null : const LinearGradient(
@@ -184,7 +193,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   StatCard(
                     title: 'Total Collections',
-                    value: '₹${NumberFormat('#,##,000').format(_stats?['totalCollection'] ?? 0)}',
+                    value: '₹${NumberFormat('#,##,##0').format(_stats?['totalCollection'] ?? 0)}',
                     icon: Icons.payments_rounded,
                     iconColor: AppTheme.successGreen,
                     gradient: isDark ? null : const LinearGradient(
@@ -231,14 +240,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     padding: EdgeInsets.all(32.0),
                     child: Text('No transactions yet.'),
                   ))
-                : ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: _recentPayments.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      return _buildTransactionItem(context, _recentPayments[index]);
-                    },
+                : Column(
+                    children: _recentPayments.map((payment) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _buildTransactionItem(context, payment),
+                      );
+                    }).toList(),
                   ),
             const SizedBox(height: 100),
           ],
@@ -304,13 +312,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final student = payment['student'] ?? {};
     final personal = student['personalDetails'] ?? {};
     final academic = student['academicDetails'] ?? {};
-    final name = personal['fullName'] ?? 'Unknown Student';
-    final amount = payment['amount'] ?? 0;
+    final name = (personal['fullName'] ?? payment['studentName'] ?? payment['name'] ?? 'Student').toString();
+    final amount = payment['amount'] ?? payment['amountPaid'] ?? 0;
     
     // Format date
     String timeStr = 'Recent';
-    if (payment['paymentDate'] != null) {
-      final date = DateTime.parse(payment['paymentDate']).toLocal();
+    final date = _parseDate(payment['paymentDate'] ?? payment['createdAt']);
+    if (date != null) {
       final now = DateTime.now();
       final diff = now.difference(date);
       if (diff.inMinutes < 60) {
